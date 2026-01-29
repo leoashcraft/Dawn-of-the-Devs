@@ -1,5 +1,6 @@
 const cheerio = require('cheerio');
 const config = require('../lib/config');
+const { safeFetch } = require('./safeFetch');
 
 /**
  * Check a site for webring navigation links.
@@ -11,7 +12,7 @@ async function checkLinks(siteUrl) {
 
   let html;
   try {
-    const res = await fetch(siteUrl, {
+    const res = await safeFetch(siteUrl, {
       headers: { 'User-Agent': config.USER_AGENT },
       redirect: 'follow',
     });

@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
 /**
- * Gardener - Automated site health checker.
+ * Gatekeeper - Automated site health checker.
  * Checks all sites for webring links and updates active status.
+ * Skips banned and denied sites.
  *
  * Usage:
- *   node bin/gardener.js              # Check all due sites
- *   node bin/gardener.js https://...  # Check a single site
+ *   node bin/gatekeeper.js              # Check all due sites
+ *   node bin/gatekeeper.js https://...  # Check a single site
  */
 
 const Site = require('../models/site');
@@ -19,6 +20,10 @@ const singleUrl = process.argv[2];
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function shouldSkip(site) {
+  return site.status === 'banned' || site.status === 'denied';
 }
 
 async function checkSite(url) {
@@ -64,8 +69,8 @@ async function checkSite(url) {
 }
 
 async function run() {
-  console.log('Dawn of the Devs Gardener');
-  console.log('========================\n');
+  console.log('Dawn of the Devs Gatekeeper');
+  console.log('===========================\n');
 
   if (singleUrl) {
     // Single site mode
@@ -76,7 +81,7 @@ async function run() {
   }
 
   // Batch mode: unchecked sites first
-  const unchecked = Site.unchecked();
+  const unchecked = Site.unchecked().filter(s => !shouldSkip(s));
   if (unchecked.length > 0) {
     console.log(`Checking ${unchecked.length} unchecked site(s)...\n`);
     for (const site of unchecked) {
@@ -89,10 +94,23 @@ async function run() {
   // Then sites that are due for re-check
   const due = GardenJournal.sitesDue();
   if (due.length > 0) {
-    console.log(`\nChecking ${due.length} site(s) due for re-check...\n`);
+    // Filter out banned/denied sites
+    const eligible = [];
     for (const entry of due) {
-      await checkSite(entry.url);
-      await sleep(500 + Math.random() * 1000);
+      const site = Site.all().find(s => s.url === entry.url);
+      if (site && !shouldSkip(site)) {
+        eligible.push(entry);
+      } else {
+        console.log(`Skipping ${entry.url} (${site ? site.status : 'unknown'})`);
+      }
+    }
+
+    if (eligible.length > 0) {
+      console.log(`\nChecking ${eligible.length} site(s) due for re-check...\n`);
+      for (const entry of eligible) {
+        await checkSite(entry.url);
+        await sleep(500 + Math.random() * 1000);
+      }
     }
   }
 
@@ -105,6 +123,6 @@ async function run() {
 }
 
 run().catch(err => {
-  console.error('Gardener error:', err);
+  console.error('Gatekeeper error:', err);
   process.exit(1);
 });

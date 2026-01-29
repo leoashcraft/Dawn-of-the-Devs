@@ -20,6 +20,9 @@
         <% if (user) { %>
           <a href="/dashboard">Dashboard</a>
         <% } %>
+        <% if (typeof isAdmin !== 'undefined' && isAdmin) { %>
+          <a href="/admin">Admin</a>
+        <% } %>
       </div>
     </nav>
   </header>

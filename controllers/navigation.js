@@ -17,8 +17,8 @@ function getReferringSite(req) {
     // Don't match our own domain
     if (config.ALLOWED_DOMAINS.includes(refDomain)) return null;
 
-    // Try to find a matching active site
-    const sites = Site.all().filter(s => s.active);
+    // Try to find a matching active + approved site
+    const sites = Site.all().filter(s => s.active && s.status === 'approved');
     for (const site of sites) {
       try {
         const siteUrl = new URL(site.url);

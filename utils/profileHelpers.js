@@ -12,10 +12,25 @@ function profileFromCard(properties) {
   if (properties.photo && properties.photo.length > 0) {
     const p = properties.photo[0];
     // photo can be a string or an object with value/alt
-    photo = typeof p === 'string' ? p : (p.value || p);
+    const raw = typeof p === 'string' ? p : (p.value || p);
+    photo = sanitizePhotoUrl(raw);
   }
 
   return { name, note, photo, url };
+}
+
+/**
+ * Sanitize a photo URL: only allow http/https schemes.
+ */
+function sanitizePhotoUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return parsed.toString();
+    }
+  } catch { /* invalid URL */ }
+  return null;
 }
 
 function firstValue(arr) {
@@ -24,4 +39,4 @@ function firstValue(arr) {
   return typeof val === 'string' ? val : (val.value || null);
 }
 
-module.exports = { profileFromCard };
+module.exports = { profileFromCard, sanitizePhotoUrl };

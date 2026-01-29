@@ -555,6 +555,185 @@ section {
   border-top: 1px solid var(--color-border);
 }
 
+/* Status notices (dashboard) */
+
+.status-notice {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  border: 1px solid;
+}
+
+.pending-notice {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.denied-notice {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.banned-notice {
+  background: rgba(248, 113, 113, 0.15);
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+/* Admin styles */
+
+.admin-stats {
+  margin-bottom: 1.5rem;
+}
+
+.stat-pills {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 1em;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.stat-pill:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.stat-pill.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-bg);
+}
+
+.stat-count {
+  font-weight: 700;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-table th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.inline-form {
+  display: inline;
+}
+
+.btn-small {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+}
+
+.btn-approve {
+  background: transparent;
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.btn-approve:hover {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--color-success);
+}
+
+.btn-deny {
+  background: transparent;
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.btn-deny:hover {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--color-warning);
+}
+
+.btn-ban {
+  background: transparent;
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.btn-ban:hover {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--color-error);
+}
+
+/* Moderation status badges */
+
+.status-badge.mod-pending {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--color-warning);
+}
+
+.status-badge.mod-approved {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--color-success);
+}
+
+.status-badge.mod-denied {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--color-error);
+}
+
+.status-badge.mod-banned {
+  background: rgba(220, 38, 38, 0.2);
+  color: #ef4444;
+}
+
+/* Error page */
+
+.error-page {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.error-page h1 {
+  font-size: 4rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-muted);
+}
+
+.error-page p {
+  font-size: 1.15rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1.5rem;
+}
+
 /* Responsive */
 
 @media (max-width: 600px) {
@@ -576,5 +755,20 @@ section {
 
   .action-buttons .btn {
     text-align: center;
+  }
+
+  .admin-table {
+    font-size: 0.85rem;
+  }
+
+  .admin-table th:nth-child(3),
+  .admin-table td:nth-child(3),
+  .admin-table th:nth-child(4),
+  .admin-table td:nth-child(4) {
+    display: none;
+  }
+
+  .stat-pills {
+    flex-wrap: wrap;
   }
 }

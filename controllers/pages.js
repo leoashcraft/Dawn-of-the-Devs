@@ -8,8 +8,9 @@ const { timeAgo } = require('../utils/timeAgo');
  */
 function index(req, res) {
   const sites = Site.all();
-  const activeSites = sites.filter(s => s.active);
-  const recentSites = sites
+  const approvedSites = sites.filter(s => s.status === 'approved');
+  const activeSites = approvedSites.filter(s => s.active);
+  const recentSites = approvedSites
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     .slice(0, 10)
     .map(s => ({

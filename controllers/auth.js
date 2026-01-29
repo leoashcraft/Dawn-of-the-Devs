@@ -1,6 +1,7 @@
 const auth = require('../lib/auth');
 const config = require('../lib/config');
 const Site = require('../models/site');
+const logger = require('../lib/logger');
 
 const INDIELOGIN_ENDPOINT = 'https://indielogin.com/auth';
 const REDIRECT_URI = config.BASE_URL + '/auth/callback';
@@ -18,7 +19,11 @@ async function loginStart(req, res) {
     try {
       endpoints = await auth.discoverEndpoints(url);
     } catch (err) {
-      req.session.flash = { type: 'error', message: `Could not reach your site: ${err.message}` };
+      logger.warn('Endpoint discovery failed', { url, error: err.message });
+      const message = config.IS_PRODUCTION
+        ? 'Could not reach your site. Please check the URL and try again.'
+        : `Could not reach your site: ${err.message}`;
+      req.session.flash = { type: 'error', message };
       return res.redirect('/');
     }
 
@@ -58,7 +63,11 @@ async function loginStart(req, res) {
 
     return res.redirect(authUrl);
   } catch (err) {
-    req.session.flash = { type: 'error', message: `Login error: ${err.message}` };
+    logger.error('Login start error', { error: err.message });
+    const message = config.IS_PRODUCTION
+      ? 'An error occurred during login. Please try again.'
+      : `Login error: ${err.message}`;
+    req.session.flash = { type: 'error', message };
     return res.redirect('/');
   }
 }
@@ -94,10 +103,15 @@ async function callback(req, res) {
     req.session.user = { url: normalizedMe };
     delete req.session.authState;
 
+    logger.info('User signed in', { url: normalizedMe });
     req.session.flash = { type: 'success', message: 'Signed in successfully!' };
     return res.redirect('/dashboard');
   } catch (err) {
-    req.session.flash = { type: 'error', message: `Auth failed: ${err.message}` };
+    logger.error('Auth callback error', { error: err.message });
+    const message = config.IS_PRODUCTION
+      ? 'Authentication failed. Please try again.'
+      : `Auth failed: ${err.message}`;
+    req.session.flash = { type: 'error', message };
     return res.redirect('/');
   }
 }

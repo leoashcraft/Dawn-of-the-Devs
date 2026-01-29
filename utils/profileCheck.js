@@ -1,6 +1,7 @@
 const { mf2 } = require('microformats-parser');
 const config = require('../lib/config');
 const { profileFromCard } = require('./profileHelpers');
+const { safeFetch } = require('./safeFetch');
 
 /**
  * Fetch a site and parse its representative h-card.
@@ -12,7 +13,7 @@ const { profileFromCard } = require('./profileHelpers');
 async function checkProfile(siteUrl) {
   let html;
   try {
-    const res = await fetch(siteUrl, {
+    const res = await safeFetch(siteUrl, {
       headers: { 'User-Agent': config.USER_AGENT },
       redirect: 'follow',
     });

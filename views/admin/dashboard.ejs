@@ -1,0 +1,87 @@
+<%- include('../partials/header') %>
+
+<h1>Admin Dashboard</h1>
+
+<section class="admin-stats">
+  <div class="stat-pills">
+    <a href="/admin" class="stat-pill <%= !currentFilter ? 'active' : '' %>">
+      All <span class="stat-count"><%= counts.total %></span>
+    </a>
+    <a href="/admin?filter=pending" class="stat-pill pending <%= currentFilter === 'pending' ? 'active' : '' %>">
+      Pending <span class="stat-count"><%= counts.pending %></span>
+    </a>
+    <a href="/admin?filter=approved" class="stat-pill approved <%= currentFilter === 'approved' ? 'active' : '' %>">
+      Approved <span class="stat-count"><%= counts.approved %></span>
+    </a>
+    <a href="/admin?filter=denied" class="stat-pill denied <%= currentFilter === 'denied' ? 'active' : '' %>">
+      Denied <span class="stat-count"><%= counts.denied %></span>
+    </a>
+    <a href="/admin?filter=banned" class="stat-pill banned <%= currentFilter === 'banned' ? 'active' : '' %>">
+      Banned <span class="stat-count"><%= counts.banned %></span>
+    </a>
+  </div>
+</section>
+
+<% if (sites.length === 0) { %>
+  <p>No sites found<%= currentFilter ? ' with status "' + currentFilter + '"' : '' %>.</p>
+<% } else { %>
+<section class="admin-sites">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Site</th>
+        <th>Status</th>
+        <th>Active</th>
+        <th>Joined</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% sites.forEach(function(site) { %>
+        <tr>
+          <td><a href="<%= site.url %>"><%= site.cuteUrl %></a></td>
+          <td>
+            <span class="status-badge mod-<%= site.status %>"><%= site.status %></span>
+          </td>
+          <td>
+            <% if (site.active) { %>
+              <span class="status-badge active">active</span>
+            <% } else { %>
+              <span class="status-badge inactive">inactive</span>
+            <% } %>
+          </td>
+          <td class="time-ago"><%= site.timeAgo %></td>
+          <td class="admin-actions">
+            <% if (site.status !== 'approved') { %>
+              <form method="POST" action="/admin/status" class="inline-form">
+                <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+                <input type="hidden" name="url" value="<%= site.url %>">
+                <input type="hidden" name="status" value="approved">
+                <button type="submit" class="btn btn-small btn-approve">Approve</button>
+              </form>
+            <% } %>
+            <% if (site.status !== 'denied') { %>
+              <form method="POST" action="/admin/status" class="inline-form">
+                <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+                <input type="hidden" name="url" value="<%= site.url %>">
+                <input type="hidden" name="status" value="denied">
+                <button type="submit" class="btn btn-small btn-deny">Deny</button>
+              </form>
+            <% } %>
+            <% if (site.status !== 'banned') { %>
+              <form method="POST" action="/admin/status" class="inline-form">
+                <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+                <input type="hidden" name="url" value="<%= site.url %>">
+                <input type="hidden" name="status" value="banned">
+                <button type="submit" class="btn btn-small btn-ban">Ban</button>
+              </form>
+            <% } %>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</section>
+<% } %>
+
+<%- include('../partials/footer') %>

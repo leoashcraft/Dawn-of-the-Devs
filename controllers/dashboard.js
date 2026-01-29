@@ -5,6 +5,7 @@ const { checkProfile } = require('../utils/profileCheck');
 const { cuteUrl } = require('../utils/urlHelpers');
 const { timeAgo } = require('../utils/timeAgo');
 const config = require('../lib/config');
+const logger = require('../lib/logger');
 
 /**
  * GET /dashboard - Show the authenticated user's dashboard.
@@ -41,6 +42,8 @@ async function checkLinksAction(req, res) {
     const active = isActiveFromErrors(errors);
     Site.setActive(siteUrl, active);
 
+    logger.info('Link check completed', { url: siteUrl, active, errorCount: errors.length });
+
     if (errors.length === 0) {
       req.session.flash = { type: 'success', message: 'All links look good! Your site is active in the webring.' };
     } else if (active) {
@@ -49,7 +52,11 @@ async function checkLinksAction(req, res) {
       req.session.flash = { type: 'error', message: 'Your site is missing required webring links and is currently inactive.' };
     }
   } catch (err) {
-    req.session.flash = { type: 'error', message: `Error checking links: ${err.message}` };
+    logger.error('Link check error', { url: siteUrl, error: err.message });
+    const message = config.IS_PRODUCTION
+      ? 'An error occurred while checking links. Please try again.'
+      : `Error checking links: ${err.message}`;
+    req.session.flash = { type: 'error', message };
   }
 
   return res.redirect('/dashboard');
@@ -71,7 +78,11 @@ async function checkProfileAction(req, res) {
       req.session.flash = { type: 'warning', message: 'No h-card found on your site. Add one to appear in the directory with your name and photo.' };
     }
   } catch (err) {
-    req.session.flash = { type: 'error', message: `Error checking profile: ${err.message}` };
+    logger.error('Profile check error', { url: siteUrl, error: err.message });
+    const message = config.IS_PRODUCTION
+      ? 'An error occurred while checking your profile. Please try again.'
+      : `Error checking profile: ${err.message}`;
+    req.session.flash = { type: 'error', message };
   }
 
   return res.redirect('/dashboard');

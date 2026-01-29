@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS Sites (
   active INTEGER NOT NULL DEFAULT 0,
   timestamp TEXT NOT NULL DEFAULT (datetime('now')),
   profile TEXT,
-  sorting REAL NOT NULL DEFAULT 0
+  sorting REAL NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'approved'
 );
 
 CREATE TABLE IF NOT EXISTS SiteChecks (
@@ -23,4 +24,10 @@ CREATE TABLE IF NOT EXISTS GardenJournals (
   tier INTEGER NOT NULL DEFAULT 0,
   next_check TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (url) REFERENCES Sites(url)
+);
+
+CREATE TABLE IF NOT EXISTS Migrations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  applied_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

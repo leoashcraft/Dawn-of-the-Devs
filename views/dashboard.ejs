@@ -12,6 +12,13 @@
       <span class="status-badge inactive">Inactive</span>
     <% } %>
   </p>
+  <% if (site.status === 'pending') { %>
+    <p class="status-notice pending-notice">Your site is awaiting admin approval. Once approved, it will appear in the ring.</p>
+  <% } else if (site.status === 'denied') { %>
+    <p class="status-notice denied-notice">Your site has been denied entry to the ring. Please contact an admin if you believe this is an error.</p>
+  <% } else if (site.status === 'banned') { %>
+    <p class="status-notice banned-notice">Your site has been banned from the ring.</p>
+  <% } %>
 </section>
 
 <% if (site.profile) { %>

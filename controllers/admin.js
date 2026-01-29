@@ -1,0 +1,50 @@
+const Site = require('../models/site');
+const { cuteUrl } = require('../utils/urlHelpers');
+const { timeAgo } = require('../utils/timeAgo');
+const logger = require('../lib/logger');
+
+/**
+ * GET /admin - Admin dashboard with site moderation.
+ */
+function dashboard(req, res) {
+  const filter = req.query.filter || null;
+  const sites = Site.allWithStatus(filter);
+  const counts = Site.countByStatus();
+
+  const sitesDisplay = sites.map(s => ({
+    ...s,
+    cuteUrl: cuteUrl(s.url),
+    timeAgo: timeAgo(s.timestamp),
+  }));
+
+  res.render('admin/dashboard', {
+    title: 'Admin - Dawn of the Devs',
+    sites: sitesDisplay,
+    counts,
+    currentFilter: filter,
+  });
+}
+
+/**
+ * POST /admin/status - Update a site's moderation status.
+ */
+function updateStatus(req, res) {
+  const { url, status } = req.body;
+
+  if (!url || !Site.VALID_STATUSES.includes(status)) {
+    req.session.flash = { type: 'error', message: 'Invalid request.' };
+    return res.redirect('/admin');
+  }
+
+  Site.setStatus(url, status);
+  logger.info('Admin status change', {
+    admin: req.session.user.url,
+    site: url,
+    status,
+  });
+
+  req.session.flash = { type: 'success', message: `Site status updated to ${status}.` };
+  return res.redirect('/admin');
+}
+
+module.exports = { dashboard, updateStatus };
