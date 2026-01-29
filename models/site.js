@@ -36,7 +36,7 @@ function all() {
 function getActiveSitesWithProfiles() {
   const db = getDb();
   const sites = db.prepare(
-    "SELECT * FROM Sites WHERE active = 1 AND status = 'approved' AND profile IS NOT NULL ORDER BY sorting ASC"
+    "SELECT * FROM Sites WHERE active = 1 AND status = 'approved' ORDER BY sorting ASC"
   ).all();
   return sites.map(s => {
     if (s.profile) s.profile = JSON.parse(s.profile);
