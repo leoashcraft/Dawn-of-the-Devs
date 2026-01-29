@@ -1,0 +1,8 @@
+<div class="check-error check-<%= error.severity %>">
+  <% if (error.severity === 'critical') { %>
+    <span class="severity-icon">&#x26A0;</span>
+  <% } else { %>
+    <span class="severity-icon">&#x26A1;</span>
+  <% } %>
+  <span><%= error.message %></span>
+</div>

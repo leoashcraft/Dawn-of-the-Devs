@@ -1,0 +1,8 @@
+<form method="POST" action="/auth/login" class="sign-in-form">
+  <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+  <label for="url">Your domain:</label>
+  <div class="input-group">
+    <input type="text" id="url" name="url" placeholder="example.com" required autocomplete="url" class="url-input">
+    <button type="submit" class="btn">Sign in</button>
+  </div>
+</form>

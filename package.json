@@ -1,0 +1,26 @@
+{
+  "name": "dawnofthedevs",
+  "version": "1.0.0",
+  "description": "Dawn of the Devs - An IndieWeb Webring",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "garden": "node bin/gardener.js",
+    "update-directory": "node bin/directory-updater.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "cheerio": "^1.0.0",
+    "csrf-sync": "^4.0.3",
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "better-sqlite3-session-store": "^0.1.0",
+    "microformats-parser": "^2.0.3"
+  }
+}

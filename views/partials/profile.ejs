@@ -1,0 +1,14 @@
+<div class="profile-display">
+  <% if (profile.photo) { %>
+    <img src="<%= profile.photo %>" alt="<%= profile.name || '' %>" class="profile-photo">
+  <% } %>
+  <div class="profile-details">
+    <% if (profile.name) { %>
+      <strong><%= profile.name %></strong>
+    <% } %>
+    <a href="<%= url %>"><%= cuteUrl %></a>
+    <% if (profile.note) { %>
+      <p><%= profile.note %></p>
+    <% } %>
+  </div>
+</div>

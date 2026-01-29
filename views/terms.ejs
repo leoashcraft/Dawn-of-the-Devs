@@ -1,0 +1,76 @@
+<%- include('partials/header') %>
+
+<h1>Terms &amp; FAQ</h1>
+
+<dl class="faq">
+  <dt>What is Dawn of the Devs?</dt>
+  <dd>
+    Dawn of the Devs is an IndieWeb webring &mdash; a collection of web developer portfolios linked together
+    in a ring. Visitors can navigate from site to site using the "previous" and "next" links
+    that each member adds to their page.
+  </dd>
+
+  <dt>Who can join?</dt>
+  <dd>
+    Anyone with a web developer portfolio! Your site should be something you own and control,
+    not a profile on a social media platform. It should represent you and your work on the web.
+  </dd>
+
+  <dt>How do I join?</dt>
+  <dd>
+    <ol>
+      <li>Add <strong>previous</strong> and <strong>next</strong> links to your site that point to
+        <code><%= baseUrl %>/previous</code> and <code><%= baseUrl %>/next</code>.</li>
+      <li>Sign in on the <a href="/">home page</a> using your domain via IndieAuth.</li>
+      <li>Check your links from the dashboard to activate your membership.</li>
+      <li>Optionally, add an <a href="https://indieweb.org/h-card">h-card</a> to your site
+        so your profile appears in the <a href="/directory">directory</a>.</li>
+    </ol>
+  </dd>
+
+  <dt>What is IndieAuth?</dt>
+  <dd>
+    <a href="https://indieauth.net/">IndieAuth</a> is a way to sign in using your own domain name.
+    You set up your site to delegate authentication (e.g., via
+    <a href="https://indielogin.com/">indielogin.com</a> or your own authorization endpoint),
+    and you can sign in anywhere that supports it.
+  </dd>
+
+  <dt>What is an h-card?</dt>
+  <dd>
+    An <a href="https://indieweb.org/h-card">h-card</a> is a microformat for marking up your
+    profile information (name, photo, bio) in HTML. If your site has an h-card, Dawn of the Devs
+    will use it to show your profile in the directory.
+  </dd>
+
+  <dt>How does the ring navigation work?</dt>
+  <dd>
+    When someone clicks "next" or "previous" on a member's site, the webring looks at the
+    <code>Referer</code> header to figure out which site they're coming from, then redirects
+    to the next or previous member in the ring. If no referer is available, a random member is chosen.
+  </dd>
+
+  <dt>What happens if my site goes down?</dt>
+  <dd>
+    An automated gardener periodically checks all member sites. If your site is unreachable or
+    missing the required webring links, it will be marked inactive and removed from the ring
+    rotation. Once your site is back and the links are in place, it will be re-activated on
+    the next check.
+  </dd>
+
+  <dt>Can I remove my site?</dt>
+  <dd>
+    Yes. Sign in to your dashboard and remove the webring links from your site. The next
+    gardener check will mark your site as inactive. You can also remove your profile from
+    the directory at any time from the dashboard.
+  </dd>
+
+  <dt>Is there a code of conduct?</dt>
+  <dd>
+    Be a decent human. Sites containing hate speech, harassment, illegal content, or malware
+    will be removed. This is a community of people who build things for the web &mdash; let's
+    keep it welcoming and positive.
+  </dd>
+</dl>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Dawn of the Devs' %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="site-title">
+        <img src="/img/dawnofthedev.jpeg" alt="Dawn of the Devs" class="site-logo">
+        Dawn of the Devs
+      </a>
+      <div class="nav-links">
+        <a href="/directory">Directory</a>
+        <a href="/random">Random</a>
+        <a href="/terms">Terms</a>
+        <% if (user) { %>
+          <a href="/dashboard">Dashboard</a>
+        <% } %>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <% if (flash) { %>
+      <div class="flash flash-<%= flash.type %>">
+        <%= flash.message %>
+      </div>
+    <% } %>

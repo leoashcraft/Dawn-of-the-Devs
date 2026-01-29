@@ -1,0 +1,29 @@
+<%- include('partials/header') %>
+
+<h1>Directory</h1>
+
+<% if (profiles.length === 0) { %>
+  <p>No members with profiles yet. <a href="/">Join the ring</a> and add an
+    <a href="https://indieweb.org/h-card">h-card</a> to your site to appear here.</p>
+<% } else { %>
+  <div class="directory-grid">
+    <% profiles.forEach(function(p) { %>
+      <a href="<%= p.url %>" class="profile-card">
+        <% if (p.photo) { %>
+          <img src="<%= p.photo %>" alt="<%= p.name %>" class="profile-photo" loading="lazy">
+        <% } else { %>
+          <div class="profile-photo placeholder"></div>
+        <% } %>
+        <div class="profile-info">
+          <strong class="profile-name"><%= p.name %></strong>
+          <span class="profile-url"><%= p.cuteUrl %></span>
+          <% if (p.note) { %>
+            <p class="profile-note"><%= p.note %></p>
+          <% } %>
+        </div>
+      </a>
+    <% }); %>
+  </div>
+<% } %>
+
+<%- include('partials/footer') %>

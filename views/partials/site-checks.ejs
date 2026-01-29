@@ -1,0 +1,24 @@
+<table class="checks-table">
+  <thead>
+    <tr>
+      <th>When</th>
+      <th>Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% checks.forEach(function(check) { %>
+      <tr>
+        <td><%= check.timeAgo %></td>
+        <td>
+          <% if (check.errors.length === 0) { %>
+            <span class="check-ok">All clear</span>
+          <% } else { %>
+            <% check.errors.forEach(function(err) { %>
+              <%- include('check-error', { error: err }) %>
+            <% }); %>
+          <% } %>
+        </td>
+      </tr>
+    <% }); %>
+  </tbody>
+</table>

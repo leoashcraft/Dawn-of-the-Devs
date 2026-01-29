@@ -1,0 +1,64 @@
+<%- include('partials/header') %>
+
+<h1>Dashboard</h1>
+
+<section class="site-status">
+  <h2>Your site: <a href="<%= site.url %>"><%= cuteUrl %></a></h2>
+  <p>
+    Status:
+    <% if (site.active) { %>
+      <span class="status-badge active">Active</span>
+    <% } else { %>
+      <span class="status-badge inactive">Inactive</span>
+    <% } %>
+  </p>
+</section>
+
+<% if (site.profile) { %>
+<section class="profile-preview">
+  <h2>Your profile</h2>
+  <%- include('partials/profile', { profile: site.profile, url: site.url, cuteUrl: cuteUrl }) %>
+</section>
+<% } %>
+
+<section class="actions">
+  <h2>Webring links</h2>
+  <p>Add these links to your site to join the ring:</p>
+  <pre><code>&lt;a href="<%= baseUrl %>/previous"&gt;&amp;larr; Previous&lt;/a&gt;
+&lt;a href="<%= baseUrl %>/next"&gt;Next &amp;rarr;&lt;/a&gt;</code></pre>
+
+  <div class="action-buttons">
+    <form method="POST" action="/check-links">
+      <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+      <button type="submit" class="btn">Check links</button>
+    </form>
+
+    <form method="POST" action="/check-profile">
+      <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+      <button type="submit" class="btn btn-secondary">Check profile</button>
+    </form>
+
+    <% if (site.profile) { %>
+    <form method="POST" action="/remove-profile">
+      <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+      <button type="submit" class="btn btn-danger">Remove profile</button>
+    </form>
+    <% } %>
+  </div>
+</section>
+
+<% if (checks.length > 0) { %>
+<section class="checks-history">
+  <h2>Recent checks</h2>
+  <%- include('partials/site-checks', { checks: checks }) %>
+</section>
+<% } %>
+
+<section class="logout">
+  <form method="POST" action="/auth/logout">
+    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+    <button type="submit" class="btn btn-secondary">Sign out</button>
+  </form>
+</section>
+
+<%- include('partials/footer') %>
