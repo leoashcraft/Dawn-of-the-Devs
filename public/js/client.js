@@ -1,4 +1,25 @@
 /**
+ * Copy button for code blocks.
+ */
+(function () {
+  var btns = document.querySelectorAll('.copy-btn');
+  btns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var code = btn.closest('.code-block').querySelector('code');
+      if (!code) return;
+      navigator.clipboard.writeText(code.textContent).then(function () {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    });
+  });
+})();
+
+/**
  * Auto-prepend https:// to URL input fields.
  */
 (function () {

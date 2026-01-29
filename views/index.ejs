@@ -25,8 +25,13 @@
   <p>
     To join, add these links somewhere on your site, then sign in with your domain:
   </p>
-  <pre><code>&lt;a href="<%= baseUrl %>/previous" aria-label="Previous Dawn of the Devs Webring site"&gt;&amp;larr;&lt;/a&gt;
-A &lt;a href="<%= baseUrl %>"&gt;Dawn of the Devs Webring&lt;/a&gt; site &lt;a href="<%= baseUrl %>/next" aria-label="Next Dawn of the Devs Webring site"&gt;&amp;rarr;&lt;/a&gt; &lt;a href="<%= baseUrl %>/random" aria-label="Random Dawn of the Devs Webring site"&gt;&amp;#x21AF;&lt;/a&gt;</code></pre>
+  <div class="code-block">
+    <pre><code>&lt;a href="<%= baseUrl %>/previous" aria-label="Previous Dawn of the Devs Webring site"&gt;&amp;larr;&lt;/a&gt;
+&lt;a href="<%= baseUrl %>"&gt;Dawn of the Devs Webring&lt;/a&gt;
+&lt;a href="<%= baseUrl %>/next" aria-label="Next Dawn of the Devs Webring site"&gt;&amp;rarr;&lt;/a&gt;
+&lt;a href="<%= baseUrl %>/random" aria-label="Random Dawn of the Devs Webring site"&gt;&amp;#x21AF;&lt;/a&gt;</code></pre>
+    <button class="copy-btn" type="button" aria-label="Copy to clipboard" title="Copy">Copy</button>
+  </div>
 
   <% if (!user) { %>
     <%- include('partials/sign-in-form') %>
