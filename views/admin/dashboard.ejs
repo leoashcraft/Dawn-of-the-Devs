@@ -39,7 +39,7 @@
     <tbody>
       <% sites.forEach(function(site) { %>
         <tr>
-          <td><a href="<%= site.url %>"><%= site.cuteUrl %></a></td>
+          <td><a href="<%= site.url %>" target="_blank" rel="noopener"><%= site.cuteUrl %></a></td>
           <td>
             <span class="status-badge mod-<%= site.status %>"><%= site.status %></span>
           </td>
