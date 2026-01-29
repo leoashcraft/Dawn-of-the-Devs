@@ -6,10 +6,10 @@ const logger = require('../lib/logger');
 /**
  * GET /admin - Admin dashboard with site moderation.
  */
-function dashboard(req, res) {
+async function dashboard(req, res) {
   const filter = req.query.filter || null;
-  const sites = Site.allWithStatus(filter);
-  const counts = Site.countByStatus();
+  const sites = await Site.allWithStatus(filter);
+  const counts = await Site.countByStatus();
 
   const sitesDisplay = sites.map(s => ({
     ...s,
@@ -28,7 +28,7 @@ function dashboard(req, res) {
 /**
  * POST /admin/status - Update a site's moderation status.
  */
-function updateStatus(req, res) {
+async function updateStatus(req, res) {
   const { url, status } = req.body;
 
   if (!url || !Site.VALID_STATUSES.includes(status)) {
@@ -36,7 +36,7 @@ function updateStatus(req, res) {
     return res.redirect('/admin');
   }
 
-  Site.setStatus(url, status);
+  await Site.setStatus(url, status);
   logger.info('Admin status change', {
     admin: req.session.user.url,
     site: url,

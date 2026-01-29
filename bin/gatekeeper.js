@@ -15,6 +15,7 @@ const SiteCheck = require('../models/siteCheck');
 const GardenJournal = require('../models/gardenJournal');
 const { checkLinks, isActiveFromErrors } = require('../utils/linksCheck');
 const config = require('../lib/config');
+const db = require('../lib/db');
 
 const singleUrl = process.argv[2];
 
@@ -30,17 +31,17 @@ async function checkSite(url) {
   console.log(`Checking: ${url}`);
 
   const errors = await checkLinks(url);
-  SiteCheck.addSiteCheck(url, errors);
+  await SiteCheck.addSiteCheck(url, errors);
 
   const active = isActiveFromErrors(errors);
-  Site.setActive(url, active);
+  await Site.setActive(url, active);
 
   // Update garden journal
-  const journal = GardenJournal.journalForUrl(url);
+  const journal = await GardenJournal.journalForUrl(url);
   let newTier = 0;
 
   if (journal) {
-    const wasActive = journal.last_active_status === 1;
+    const wasActive = journal.last_active_status === true;
 
     if (active) {
       // Active: cap at ACTIVE_TIER_CAP
@@ -61,27 +62,30 @@ async function checkSite(url) {
     }
   }
 
-  GardenJournal.addGardenJournal(url, active, newTier);
+  await GardenJournal.addGardenJournal(url, active, newTier);
 
   const status = active ? 'ACTIVE' : 'INACTIVE';
   const errCount = errors.length;
   console.log(`  -> ${status} (${errCount} error${errCount !== 1 ? 's' : ''}, tier ${newTier})`);
 }
 
-async function run() {
+async function main() {
+  await db.initSchema();
+
   console.log('Dawn of the Devs Gatekeeper');
   console.log('===========================\n');
 
   if (singleUrl) {
     // Single site mode
-    Site.getSite(singleUrl); // Ensure it exists
+    await Site.getSite(singleUrl); // Ensure it exists
     await checkSite(singleUrl);
     console.log('\nDone.');
+    await db.pool.end();
     process.exit(0);
   }
 
   // Batch mode: unchecked sites first
-  const unchecked = Site.unchecked().filter(s => !shouldSkip(s));
+  const unchecked = (await Site.unchecked()).filter(s => !shouldSkip(s));
   if (unchecked.length > 0) {
     console.log(`Checking ${unchecked.length} unchecked site(s)...\n`);
     for (const site of unchecked) {
@@ -92,12 +96,13 @@ async function run() {
   }
 
   // Then sites that are due for re-check
-  const due = GardenJournal.sitesDue();
+  const due = await GardenJournal.sitesDue();
   if (due.length > 0) {
     // Filter out banned/denied sites
+    const allSites = await Site.all();
     const eligible = [];
     for (const entry of due) {
-      const site = Site.all().find(s => s.url === entry.url);
+      const site = allSites.find(s => s.url === entry.url);
       if (site && !shouldSkip(site)) {
         eligible.push(entry);
       } else {
@@ -119,10 +124,12 @@ async function run() {
   }
 
   console.log('\nDone.');
+  await db.pool.end();
   process.exit(0);
 }
 
-run().catch(err => {
+main().catch(async err => {
   console.error('Gatekeeper error:', err);
+  await db.pool.end();
   process.exit(1);
 });

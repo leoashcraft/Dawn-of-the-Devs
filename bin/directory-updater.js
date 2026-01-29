@@ -10,6 +10,7 @@
 
 const Site = require('../models/site');
 const { checkProfile } = require('../utils/profileCheck');
+const db = require('../lib/db');
 
 const singleUrl = process.argv[2];
 
@@ -22,8 +23,8 @@ async function updateSite(url) {
 
   try {
     const profile = await checkProfile(url);
-    Site.setProfile(url, profile);
-    Site.updateSorting(url);
+    await Site.setProfile(url, profile);
+    await Site.updateSorting(url);
 
     if (profile) {
       console.log(`  -> Profile: ${profile.name || '(no name)'}`);
@@ -35,21 +36,25 @@ async function updateSite(url) {
   }
 }
 
-async function run() {
+async function main() {
+  await db.initSchema();
+
   console.log('Dawn of the Devs Directory Updater');
   console.log('==================================\n');
 
   if (singleUrl) {
-    Site.getSite(singleUrl); // Ensure it exists
+    await Site.getSite(singleUrl); // Ensure it exists
     await updateSite(singleUrl);
     console.log('\nDone.');
+    await db.pool.end();
     process.exit(0);
   }
 
-  const sites = Site.getActiveSitesWithProfiles();
+  const sites = await Site.getActiveSitesWithProfiles();
 
   if (sites.length === 0) {
     console.log('No active sites with profiles to update.');
+    await db.pool.end();
     process.exit(0);
   }
 
@@ -61,10 +66,12 @@ async function run() {
   }
 
   console.log('\nDone.');
+  await db.pool.end();
   process.exit(0);
 }
 
-run().catch(err => {
+main().catch(async err => {
   console.error('Directory updater error:', err);
+  await db.pool.end();
   process.exit(1);
 });

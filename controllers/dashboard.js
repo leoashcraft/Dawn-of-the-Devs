@@ -10,10 +10,10 @@ const logger = require('../lib/logger');
 /**
  * GET /dashboard - Show the authenticated user's dashboard.
  */
-function show(req, res) {
+async function show(req, res) {
   const siteUrl = req.session.user.url;
-  const site = Site.getSite(siteUrl);
-  const checks = SiteCheck.getSiteChecks(siteUrl, 10);
+  const site = await Site.getSite(siteUrl);
+  const checks = await SiteCheck.getSiteChecks(siteUrl, 10);
 
   const checksDisplay = checks.map(c => ({
     ...c,
@@ -37,10 +37,10 @@ async function checkLinksAction(req, res) {
 
   try {
     const errors = await checkLinks(siteUrl);
-    SiteCheck.addSiteCheck(siteUrl, errors);
+    await SiteCheck.addSiteCheck(siteUrl, errors);
 
     const active = isActiveFromErrors(errors);
-    Site.setActive(siteUrl, active);
+    await Site.setActive(siteUrl, active);
 
     logger.info('Link check completed', { url: siteUrl, active, errorCount: errors.length });
 
@@ -70,7 +70,7 @@ async function checkProfileAction(req, res) {
 
   try {
     const profile = await checkProfile(siteUrl);
-    Site.setProfile(siteUrl, profile);
+    await Site.setProfile(siteUrl, profile);
 
     if (profile) {
       req.session.flash = { type: 'success', message: 'Profile updated from your h-card!' };
@@ -91,9 +91,9 @@ async function checkProfileAction(req, res) {
 /**
  * POST /remove-profile - Remove the user's profile from the directory.
  */
-function removeProfile(req, res) {
+async function removeProfile(req, res) {
   const siteUrl = req.session.user.url;
-  Site.setProfile(siteUrl, null);
+  await Site.setProfile(siteUrl, null);
   req.session.flash = { type: 'success', message: 'Profile removed from the directory.' };
   return res.redirect('/dashboard');
 }

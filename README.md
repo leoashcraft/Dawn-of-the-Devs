@@ -26,12 +26,12 @@ Webrings are one of the oldest forms of site-to-site federation on the web. By a
 
 ## Tech Stack
 
-- **Runtime:** Node.js (>=18)
+- **Runtime:** Node.js (>=20)
 - **Framework:** [Express.js](https://expressjs.com/)
 - **Templates:** [EJS](https://ejs.co/)
-- **Database:** SQLite via [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)
+- **Database:** PostgreSQL via [node-postgres (pg)](https://node-postgres.com/)
 - **Auth:** [IndieAuth](https://indieauth.spec.indieweb.org/) with PKCE + [indielogin.com](https://indielogin.com/) fallback
-- **Sessions:** express-session with SQLite-backed store
+- **Sessions:** express-session with [connect-pg-simple](https://github.com/voxpelli/node-connect-pg-simple) (PostgreSQL-backed store)
 - **CSRF Protection:** [csrf-sync](https://github.com/Psifi-Solutions/csrf-sync) (synchronizer token pattern)
 - **Security Headers:** [helmet](https://helmetjs.github.io/) with Content Security Policy
 - **Rate Limiting:** [express-rate-limit](https://github.com/express-rate-limit/express-rate-limit)
@@ -115,9 +115,9 @@ Three tiers of rate limiting per IP address:
 
 ### Database
 
-- All SQL queries use parameterized `?` placeholders via better-sqlite3
+- All SQL queries use parameterized `$1, $2, ...` placeholders via node-postgres
 - Schema migrations tracked in a `Migrations` table
-- WAL mode enabled for concurrent read access
+- Connection pooling via `pg.Pool`
 
 ## Setup
 
@@ -126,9 +126,12 @@ git clone https://github.com/leoashcraft/Dawn-of-the-Devs.git
 cd Dawn-of-the-Devs
 npm install
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your configuration (DATABASE_URL, secrets, etc.)
+# Ensure PostgreSQL is running and accessible
 npm run dev
 ```
+
+The database schema is created automatically on first startup.
 
 ### Environment Variables
 
@@ -139,7 +142,7 @@ npm run dev
 | `SESSION_SECRET` | Secret for signing session cookies (required in production) |
 | `CSRF_SECRET` | Secret for CSRF token generation (required in production) |
 | `USER_AGENT` | User-Agent string for outbound requests |
-| `DB_PATH` | Path to the SQLite database file |
+| `DATABASE_URL` | PostgreSQL connection string (auto-set by Railway) |
 | `NODE_ENV` | Set to `production` for security hardening |
 | `ADMIN_URLS` | Comma-separated admin user URLs (required in production) |
 | `FETCH_TIMEOUT_MS` | Timeout for outbound HTTP requests (default: 10000) |
@@ -160,7 +163,7 @@ dawnofthedevs/
   server.js                  # Express app, routes, middleware, error handling
   lib/
     config.js                # Env-based configuration with production guards
-    db.js                    # SQLite singleton (WAL mode) with migrations
+    db.js                    # PostgreSQL pool with async helpers and migrations
     auth.js                  # IndieAuth: discovery, PKCE, code exchange
     middleware.js            # commonLocals, requireAuth, requireAdmin
     logger.js                # Structured JSON logger
@@ -186,7 +189,7 @@ dawnofthedevs/
     gatekeeper.js            # Automated site health checker
     directory-updater.js     # Profile re-fetcher
   schema/
-    schema.sql               # SQLite schema (4 tables)
+    schema.sql               # PostgreSQL schema (4 tables)
   views/                     # EJS templates
     admin/                   # Admin dashboard
     partials/                # Shared template partials

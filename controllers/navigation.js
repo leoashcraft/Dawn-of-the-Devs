@@ -6,7 +6,7 @@ const { cuteUrl } = require('../utils/urlHelpers');
  * Extract the referring site URL from the Referer header.
  * Matches against active webring members.
  */
-function getReferringSite(req) {
+async function getReferringSite(req) {
   const referer = req.get('referer') || req.get('referrer');
   if (!referer) return null;
 
@@ -18,7 +18,7 @@ function getReferringSite(req) {
     if (config.ALLOWED_DOMAINS.includes(refDomain)) return null;
 
     // Try to find a matching active + approved site
-    const sites = Site.all().filter(s => s.active && s.status === 'approved');
+    const sites = (await Site.all()).filter(s => s.active && s.status === 'approved');
     for (const site of sites) {
       try {
         const siteUrl = new URL(site.url);
@@ -36,18 +36,18 @@ function getReferringSite(req) {
  * GET /next - Navigate to the next site in the ring.
  * Also handles /:slug/next for legacy compatibility.
  */
-function next(req, res) {
-  const referrer = getReferringSite(req);
+async function next(req, res) {
+  const referrer = await getReferringSite(req);
 
   if (referrer) {
-    const nextSite = Site.getNextSite(referrer);
+    const nextSite = await Site.getNextSite(referrer);
     if (nextSite) {
       return res.redirect(302, nextSite.url);
     }
   }
 
   // Fallback: random site
-  const random = Site.randomActive(referrer);
+  const random = await Site.randomActive(referrer);
   if (random) {
     return res.redirect(302, random.url);
   }
@@ -60,18 +60,18 @@ function next(req, res) {
  * GET /previous - Navigate to the previous site in the ring.
  * Also handles /:slug/previous for legacy compatibility.
  */
-function previous(req, res) {
-  const referrer = getReferringSite(req);
+async function previous(req, res) {
+  const referrer = await getReferringSite(req);
 
   if (referrer) {
-    const prevSite = Site.getPreviousSite(referrer);
+    const prevSite = await Site.getPreviousSite(referrer);
     if (prevSite) {
       return res.redirect(302, prevSite.url);
     }
   }
 
   // Fallback: random site
-  const random = Site.randomActive(referrer);
+  const random = await Site.randomActive(referrer);
   if (random) {
     return res.redirect(302, random.url);
   }
@@ -82,9 +82,9 @@ function previous(req, res) {
 /**
  * GET /random - Redirect to a random active site.
  */
-function random(req, res) {
-  const referrer = getReferringSite(req);
-  const site = Site.randomActive(referrer);
+async function random(req, res) {
+  const referrer = await getReferringSite(req);
+  const site = await Site.randomActive(referrer);
 
   if (site) {
     return res.redirect(302, site.url);

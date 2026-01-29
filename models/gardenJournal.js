@@ -1,50 +1,45 @@
-const { getDb } = require('../lib/db');
+const db = require('../lib/db');
 const config = require('../lib/config');
 
 /**
  * Get the garden journal entry for a URL.
  */
-function journalForUrl(url) {
-  const db = getDb();
-  return db.prepare('SELECT * FROM GardenJournals WHERE url = ?').get(url);
+async function journalForUrl(url) {
+  return db.getOne('SELECT * FROM GardenJournals WHERE url = $1', [url]);
 }
 
 /**
  * Add or update a garden journal entry (upsert).
  */
-function addGardenJournal(url, activeStatus, tier) {
-  const db = getDb();
+async function addGardenJournal(url, activeStatus, tier) {
   const waitDays = config.WAIT_TIERS[tier];
 
   let nextCheck;
   if (waitDays === 'NEVER') {
-    // Set far-future date
     nextCheck = '9999-12-31 23:59:59';
   } else {
     const next = new Date();
     next.setDate(next.getDate() + waitDays);
-    nextCheck = next.toISOString().replace('T', ' ').slice(0, 19);
+    nextCheck = next.toISOString();
   }
 
-  db.prepare(`
+  await db.query(`
     INSERT INTO GardenJournals (url, last_active_status, tier, next_check)
-    VALUES (?, ?, ?, ?)
+    VALUES ($1, $2, $3, $4)
     ON CONFLICT(url) DO UPDATE SET
-      last_active_status = excluded.last_active_status,
-      tier = excluded.tier,
-      next_check = excluded.next_check
-  `).run(url, activeStatus ? 1 : 0, tier, nextCheck);
+      last_active_status = EXCLUDED.last_active_status,
+      tier = EXCLUDED.tier,
+      next_check = EXCLUDED.next_check
+  `, [url, activeStatus, tier, nextCheck]);
 }
 
 /**
  * Get all sites that are due for a check (next_check <= now).
  */
-function sitesDue() {
-  const db = getDb();
-  const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
-  return db.prepare(
-    'SELECT gj.*, s.active FROM GardenJournals gj JOIN Sites s ON gj.url = s.url WHERE gj.next_check <= ? ORDER BY gj.next_check ASC'
-  ).all(now);
+async function sitesDue() {
+  return db.getAll(
+    'SELECT gj.*, s.active FROM GardenJournals gj JOIN Sites s ON gj.url = s.url WHERE gj.next_check <= NOW() ORDER BY gj.next_check ASC'
+  );
 }
 
 module.exports = {

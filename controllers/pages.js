@@ -6,8 +6,8 @@ const { timeAgo } = require('../utils/timeAgo');
 /**
  * GET / - Home page with sign-in, recent members, etc.
  */
-function index(req, res) {
-  const sites = Site.all();
+async function index(req, res) {
+  const sites = await Site.all();
   const approvedSites = sites.filter(s => s.status === 'approved');
   const activeSites = approvedSites.filter(s => s.active);
   const recentSites = approvedSites
@@ -30,8 +30,8 @@ function index(req, res) {
 /**
  * GET /directory - Grid of member profiles.
  */
-function directory(req, res) {
-  const sites = Site.getActiveSitesWithProfiles();
+async function directory(req, res) {
+  const sites = await Site.getActiveSitesWithProfiles();
   const profiles = sites.map(s => {
     const profile = s.profile || {};
     const cute = cuteUrl(s.url);

@@ -97,7 +97,7 @@ async function callback(req, res) {
     const normalizedMe = auth.normalizeUrl(me);
 
     // Get or create the site
-    Site.getSite(normalizedMe);
+    await Site.getSite(normalizedMe);
 
     // Set session
     req.session.user = { url: normalizedMe };

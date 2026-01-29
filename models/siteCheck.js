@@ -1,13 +1,13 @@
-const { getDb } = require('../lib/db');
+const db = require('../lib/db');
 
 /**
  * Get recent site checks for a URL with error categorization.
  */
-function getSiteChecks(url, limit = 10) {
-  const db = getDb();
-  const checks = db.prepare(
-    'SELECT * FROM SiteChecks WHERE url = ? ORDER BY datetime DESC LIMIT ?'
-  ).all(url, limit);
+async function getSiteChecks(url, limit = 10) {
+  const checks = await db.getAll(
+    'SELECT * FROM SiteChecks WHERE url = $1 ORDER BY datetime DESC LIMIT $2',
+    [url, limit]
+  );
 
   return checks.map(check => {
     const errors = JSON.parse(check.result);
@@ -25,11 +25,11 @@ function getSiteChecks(url, limit = 10) {
  * @param {string} url - The site URL
  * @param {Array} errors - Array of {message, severity} objects
  */
-function addSiteCheck(url, errors) {
-  const db = getDb();
-  db.prepare(
-    'INSERT INTO SiteChecks (url, result) VALUES (?, ?)'
-  ).run(url, JSON.stringify(errors));
+async function addSiteCheck(url, errors) {
+  await db.query(
+    'INSERT INTO SiteChecks (url, result) VALUES ($1, $2)',
+    [url, JSON.stringify(errors)]
+  );
 }
 
 module.exports = {

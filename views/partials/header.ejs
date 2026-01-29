@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title><%= typeof title !== 'undefined' ? title : 'Dawn of the Devs' %></title>
+  <meta name="description" content="An IndieWeb webring for web developer portfolios. Discover fellow developers by browsing the ring.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="<%= typeof title !== 'undefined' ? title : 'Dawn of the Devs' %>">
+  <meta property="og:description" content="An IndieWeb webring for web developer portfolios. Discover fellow developers by browsing the ring.">
+  <meta property="og:image" content="<%= typeof baseUrl !== 'undefined' ? baseUrl : '' %>/img/social.png">
+  <meta property="og:url" content="<%= typeof baseUrl !== 'undefined' ? baseUrl : '' %>">
+  <meta property="og:site_name" content="Dawn of the Devs">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="<%= typeof title !== 'undefined' ? title : 'Dawn of the Devs' %>">
+  <meta name="twitter:description" content="An IndieWeb webring for web developer portfolios. Discover fellow developers by browsing the ring.">
+  <meta name="twitter:image" content="<%= typeof baseUrl !== 'undefined' ? baseUrl : '' %>/img/social.png">
   <link rel="icon" type="image/png" href="/img/favicons/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="/img/favicons/favicon.svg" />
   <link rel="shortcut icon" href="/img/favicons/favicon.ico" />
@@ -37,7 +48,7 @@
           <div class="nav-links">
             <a href="/directory">Directory</a>
             <a href="/random">Random</a>
-            <a href="/terms">Terms</a>
+            <a href="/terms">FAQs</a>
             <% if (user) { %>
               <a href="/dashboard">Dashboard</a>
             <% } %>
