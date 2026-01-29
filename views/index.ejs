@@ -10,8 +10,9 @@
   <h2>What is this?</h2>
   <p>
     Dawn of the Devs is a <a href="https://indieweb.org/webring">webring</a> for web developer portfolios.
-    Members connect their sites in a ring that visitors can browse through. Members add <strong>next</strong> and <strong>previous</strong>
-    links to their sites, connecting them in a ring that visitors can browse through.
+    Members link their sites together so visitors can discover developers
+    by clicking next, previous, random &mdash; no algorithms, no tracking,
+    no ranking. Just human-made sites, linked together.
   </p>
   <p>
     <a href="/random" class="btn">Visit a random member</a>
@@ -29,6 +30,11 @@
 
   <% if (!user) { %>
     <%- include('partials/sign-in-form') %>
+    <p class="indieauth-hint">
+      Sign-in uses <a href="https://indieauth.net/" target="_blank" rel="noopener">IndieAuth</a>.
+      You'll need an authorization endpoint on your domain &mdash;
+      <a href="https://indielogin.com/setup" target="_blank" rel="noopener">set one up</a> if you haven't already.
+    </p>
   <% } else { %>
     <p>You are signed in as <strong><%= user.url %></strong>. <a href="/dashboard">Go to dashboard</a>.</p>
   <% } %>

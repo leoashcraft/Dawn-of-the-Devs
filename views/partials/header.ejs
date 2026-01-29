@@ -3,33 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
   <title><%= typeof title !== 'undefined' ? title : 'Dawn of the Devs' %></title>
+  <link rel="icon" type="image/png" href="/img/favicons/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/img/favicons/favicon.svg" />
+  <link rel="shortcut icon" href="/img/favicons/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/favicons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="D.o.t.D." />
+  <link rel="manifest" href="/img/favicons/site.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <header>
-    <nav>
-      <a href="/" class="site-title">
-        <img src="/img/dawnofthedev.jpeg" alt="Dawn of the Devs" class="site-logo">
-        Dawn of the Devs
-      </a>
-      <div class="nav-links">
-        <a href="/directory">Directory</a>
-        <a href="/random">Random</a>
-        <a href="/terms">Terms</a>
-        <% if (user) { %>
-          <a href="/dashboard">Dashboard</a>
-        <% } %>
-        <% if (typeof isAdmin !== 'undefined' && isAdmin) { %>
-          <a href="/admin">Admin</a>
-        <% } %>
+  <div class="page">
+    <div class="window">
+      <div class="window-bar">
+        <div class="window-dots">
+          <button class="dot dot-red" type="button" aria-label="Close window"></button>
+          <button class="dot dot-yellow" type="button" aria-label="Minimize window"></button>
+          <button class="dot dot-green" type="button" aria-label="Maximize window"></button>
+        </div>
+        <div class="window-title">dawn-of-the-devs</div>
       </div>
-    </nav>
-  </header>
 
-  <main>
-    <% if (flash) { %>
-      <div class="flash flash-<%= flash.type %>">
-        <%= flash.message %>
-      </div>
-    <% } %>
+      <header>
+        <nav>
+          <a href="/" class="site-title">
+            <img src="/img/dawnofthedev.jpeg" alt="Dawn of the Devs" class="site-logo">
+            Dawn of the Devs
+          </a>
+          <div class="nav-links">
+            <a href="/directory">Directory</a>
+            <a href="/random">Random</a>
+            <a href="/terms">Terms</a>
+            <% if (user) { %>
+              <a href="/dashboard">Dashboard</a>
+            <% } %>
+            <% if (typeof isAdmin !== 'undefined' && isAdmin) { %>
+              <a href="/admin">Admin</a>
+            <% } %>
+          </div>
+        </nav>
+      </header>
+
+      <main>
+        <% if (flash) { %>
+          <div class="flash flash-<%= flash.type %>">
+            <%= flash.message %>
+          </div>
+        <% } %>
