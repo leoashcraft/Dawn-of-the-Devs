@@ -36,6 +36,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       scriptSrc: ["'self'"],
       connectSrc: ["'self'"],
+      formAction: ["'self'", "https://indielogin.com", "https:"],
     },
   },
 }));
