@@ -8,15 +8,20 @@
 <% } else { %>
   <div class="directory-grid">
     <% profiles.forEach(function(p) { %>
-      <a href="<%= p.url %>" class="profile-card">
+      <a href="<%= p.url %>" class="profile-card" target="_blank" rel="noopener">
         <% if (p.photo) { %>
           <img src="<%= p.photo %>" alt="<%= p.name %>" class="profile-photo" loading="lazy">
         <% } else { %>
-          <div class="profile-photo placeholder"></div>
+          <div class="profile-photo placeholder"><span class="placeholder-initial"><%= p.name.charAt(0).toUpperCase() %></span></div>
         <% } %>
         <div class="profile-info">
           <strong class="profile-name"><%= p.name %></strong>
-          <span class="profile-url"><%= p.cuteUrl %></span>
+          <% if (p.hasName) { %>
+            <span class="profile-url"><%= p.cuteUrl %></span>
+          <% } %>
+          <% if (p.jobTitle) { %>
+            <span class="profile-title"><%= p.jobTitle %></span>
+          <% } %>
           <% if (p.note) { %>
             <p class="profile-note"><%= p.note %></p>
           <% } %>

@@ -7,6 +7,7 @@ function profileFromCard(properties) {
   const name = firstValue(properties.name);
   const note = firstValue(properties.note);
   const url = firstValue(properties.url);
+  const jobTitle = firstValue(properties['job-title']);
 
   let photo = null;
   if (properties.photo && properties.photo.length > 0) {
@@ -16,7 +17,7 @@ function profileFromCard(properties) {
     photo = sanitizePhotoUrl(raw);
   }
 
-  return { name, note, photo, url };
+  return { name, note, photo, url, jobTitle };
 }
 
 /**

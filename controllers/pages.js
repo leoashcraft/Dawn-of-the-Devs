@@ -34,10 +34,13 @@ function directory(req, res) {
   const sites = Site.getActiveSitesWithProfiles();
   const profiles = sites.map(s => {
     const profile = s.profile || {};
+    const cute = cuteUrl(s.url);
     return {
       url: s.url,
-      cuteUrl: cuteUrl(s.url),
-      name: profile.name || cuteUrl(s.url),
+      cuteUrl: cute,
+      name: profile.name || cute,
+      hasName: !!profile.name,
+      jobTitle: profile.jobTitle || null,
       note: profile.note || null,
       photo: profile.photo || null,
     };

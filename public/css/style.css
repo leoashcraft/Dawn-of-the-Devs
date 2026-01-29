@@ -1072,6 +1072,16 @@ section {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(171, 39, 29, 0.15);
+  border: 1px solid var(--color-border);
+}
+
+.placeholder-initial {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  line-height: 1;
 }
 
 .profile-info {
@@ -1090,6 +1100,12 @@ section {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   color: var(--color-text-muted);
+}
+
+.profile-title {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 .profile-note {
