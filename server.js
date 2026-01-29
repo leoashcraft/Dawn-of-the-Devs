@@ -165,6 +165,6 @@ db.initSchema().then(() => {
     logger.info('Server started', { url: config.BASE_URL, port: config.PORT });
   });
 }).catch(err => {
-  logger.error('Failed to initialize database', { error: err.message });
+  console.error('Failed to initialize database:', err);
   process.exit(1);
 });
