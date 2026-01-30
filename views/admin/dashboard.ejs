@@ -2,6 +2,67 @@
 
 <h1>Admin Dashboard</h1>
 
+<section class="webring-config">
+  <h2>Webring Configuration</h2>
+  <form method="POST" action="/admin/config" class="config-form">
+    <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+    
+    <div class="config-group">
+      <h3>Home Link</h3>
+      <div class="form-row">
+        <label for="homeText">Link Text:</label>
+        <input type="text" id="homeText" name="homeText" value="<%= webringConfig.homeText %>" class="url-input">
+      </div>
+      <div class="form-row">
+        <label for="homeLabel">aria-label:</label>
+        <input type="text" id="homeLabel" name="homeLabel" value="<%= webringConfig.homeLabel %>" class="url-input">
+      </div>
+      <div class="form-row">
+        <label for="homeTitle">title:</label>
+        <input type="text" id="homeTitle" name="homeTitle" value="<%= webringConfig.homeTitle %>" class="url-input">
+      </div>
+    </div>
+
+    <div class="config-group">
+      <h3>Previous Link</h3>
+      <div class="form-row">
+        <label for="previousLabel">aria-label:</label>
+        <input type="text" id="previousLabel" name="previousLabel" value="<%= webringConfig.previousLabel %>" class="url-input">
+      </div>
+      <div class="form-row">
+        <label for="previousTitle">title:</label>
+        <input type="text" id="previousTitle" name="previousTitle" value="<%= webringConfig.previousTitle %>" class="url-input">
+      </div>
+    </div>
+
+    <div class="config-group">
+      <h3>Next Link</h3>
+      <div class="form-row">
+        <label for="nextLabel">aria-label:</label>
+        <input type="text" id="nextLabel" name="nextLabel" value="<%= webringConfig.nextLabel %>" class="url-input">
+      </div>
+      <div class="form-row">
+        <label for="nextTitle">title:</label>
+        <input type="text" id="nextTitle" name="nextTitle" value="<%= webringConfig.nextTitle %>" class="url-input">
+      </div>
+    </div>
+
+    <div class="config-group">
+      <h3>Random Link</h3>
+      <div class="form-row">
+        <label for="randomLabel">aria-label:</label>
+        <input type="text" id="randomLabel" name="randomLabel" value="<%= webringConfig.randomLabel %>" class="url-input">
+      </div>
+      <div class="form-row">
+        <label for="randomTitle">title:</label>
+        <input type="text" id="randomTitle" name="randomTitle" value="<%= webringConfig.randomTitle %>" class="url-input">
+      </div>
+    </div>
+
+    <button type="submit" class="btn">Save Configuration</button>
+  </form>
+</section>
+
 <section class="admin-stats">
   <div class="stat-pills">
     <a href="/admin" class="stat-pill <%= !currentFilter ? 'active' : '' %>">

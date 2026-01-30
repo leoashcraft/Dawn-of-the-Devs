@@ -137,6 +137,7 @@ app.post('/remove-profile', actionLimiter, csrfSynchronisedProtection, requireAu
 // --- Admin routes ---
 app.get('/admin', requireAuth, requireAdmin, asyncHandler(admin.dashboard));
 app.post('/admin/status', csrfSynchronisedProtection, requireAuth, requireAdmin, asyncHandler(admin.updateStatus));
+app.post('/admin/config', csrfSynchronisedProtection, requireAuth, requireAdmin, asyncHandler(admin.updateConfig));
 
 // --- Error handling ---
 

@@ -2,6 +2,19 @@ const Site = require('../models/site');
 const { cuteUrl } = require('../utils/urlHelpers');
 const { timeAgo } = require('../utils/timeAgo');
 
+// Default webring configuration - this would normally come from database
+const DEFAULT_CONFIG = {
+  homeText: 'Dawn of the Devs Webring',
+  homeLabel: 'Dawn of the Devs Webring Homepage',
+  homeTitle: 'Dawn of the Devs Webring Homepage',
+  previousLabel: 'Previous Dawn of the Devs Webring site',
+  previousTitle: 'Previous Dawn of the Devs Webring site',
+  nextLabel: 'Next Dawn of the Devs Webring site',
+  nextTitle: 'Next Dawn of the Devs Webring site',
+  randomLabel: 'Random Dawn of the Devs Webring site',
+  randomTitle: 'Random Dawn of the Devs Webring site',
+};
+
 /**
  * GET / - Home page with sign-in, recent members, etc.
  */
@@ -18,11 +31,15 @@ async function index(req, res) {
       timeAgo: timeAgo(s.timestamp),
     }));
 
+  // TODO: Load from database when ready
+  const webringConfig = { ...DEFAULT_CONFIG };
+
   res.render('index', {
     title: 'Dawn of the Devs',
     activeSites,
     recentSites,
     cuteUrl,
+    webringConfig,
   });
 }
 

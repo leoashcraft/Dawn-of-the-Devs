@@ -9,6 +9,19 @@ const { timeAgo } = require('../utils/timeAgo');
 const config = require('../lib/config');
 const logger = require('../lib/logger');
 
+// Default webring configuration - this would normally come from database
+const DEFAULT_CONFIG = {
+  homeText: 'Dawn of the Devs Webring',
+  homeLabel: 'Dawn of the Devs Webring Homepage',
+  homeTitle: 'Dawn of the Devs Webring Homepage',
+  previousLabel: 'Previous Dawn of the Devs Webring site',
+  previousTitle: 'Previous Dawn of the Devs Webring site',
+  nextLabel: 'Next Dawn of the Devs Webring site',
+  nextTitle: 'Next Dawn of the Devs Webring site',
+  randomLabel: 'Random Dawn of the Devs Webring site',
+  randomTitle: 'Random Dawn of the Devs Webring site',
+};
+
 /**
  * GET /dashboard - Show the authenticated user's dashboard.
  */
@@ -23,6 +36,9 @@ async function show(req, res) {
     timeAgo: timeAgo(c.datetime),
   }));
 
+  // TODO: Load from database when ready
+  const webringConfig = { ...DEFAULT_CONFIG };
+
   res.render('dashboard', {
     title: 'Dashboard - Dawn of the Devs',
     site,
@@ -30,6 +46,7 @@ async function show(req, res) {
     checks: checksDisplay,
     hits,
     baseUrl: config.BASE_URL,
+    webringConfig,
   });
 }
 
