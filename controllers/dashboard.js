@@ -1,5 +1,6 @@
 const Site = require('../models/site');
 const SiteCheck = require('../models/siteCheck');
+const NavigationHit = require('../models/navigationHit');
 const { checkLinks, isActiveFromErrors } = require('../utils/linksCheck');
 const { checkProfile } = require('../utils/profileCheck');
 const { flashError } = require('../lib/middleware');
@@ -15,6 +16,7 @@ async function show(req, res) {
   const siteUrl = req.session.user.url;
   const site = await Site.getSite(siteUrl);
   const checks = await SiteCheck.getSiteChecks(siteUrl, 10);
+  const hits = await NavigationHit.countForSite(siteUrl);
 
   const checksDisplay = checks.map(c => ({
     ...c,
@@ -26,6 +28,7 @@ async function show(req, res) {
     site,
     cuteUrl: cuteUrl(siteUrl),
     checks: checksDisplay,
+    hits,
     baseUrl: config.BASE_URL,
   });
 }

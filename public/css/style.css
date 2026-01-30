@@ -1390,6 +1390,13 @@ section {
   display: flex;
   gap: 0.35rem;
   flex-wrap: wrap;
+  align-items: center;
+  min-height: 100%;
+}
+
+.admin-table td.hits-cell,
+.admin-table td.admin-actions {
+  vertical-align: middle;
 }
 
 .inline-form {
@@ -1686,6 +1693,14 @@ section {
   animation: poof 0.3s ease-out forwards !important;
   pointer-events: none;
 }
+
+/* Navigation stats (dashboard) */
+
+.nav-stats { text-align: center; }
+.hits-total-large { font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0 0; color: var(--color-text); }
+.nav-stats-label { color: var(--color-text-muted); font-size: 0.85rem; margin: 0 0 0.75rem; }
+.hits-breakdown-large { display: flex; justify-content: center; gap: 1.25rem; font-size: 0.9rem; color: var(--color-text-muted); }
+.hits-breakdown-large span { display: inline-flex; align-items: center; gap: 0.25rem; }
 
 /* Responsive */
 

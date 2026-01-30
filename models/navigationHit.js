@@ -29,4 +29,25 @@ async function countByReferrer() {
   }));
 }
 
-module.exports = { record, countByReferrer };
+async function countForSite(siteUrl) {
+  const row = await db.getOne(`
+    SELECT
+      COUNT(*) AS total,
+      COUNT(*) FILTER (WHERE link_type = 'previous') AS previous,
+      COUNT(*) FILTER (WHERE link_type = 'next') AS next,
+      COUNT(*) FILTER (WHERE link_type = 'random') AS random,
+      COUNT(*) FILTER (WHERE link_type = 'home') AS home
+    FROM NavigationHits
+    WHERE referrer_url = $1
+  `, [siteUrl]);
+  if (!row) return { total: 0, previous: 0, next: 0, random: 0, home: 0 };
+  return {
+    total: parseInt(row.total, 10),
+    previous: parseInt(row.previous, 10),
+    next: parseInt(row.next, 10),
+    random: parseInt(row.random, 10),
+    home: parseInt(row.home, 10),
+  };
+}
+
+module.exports = { record, countByReferrer, countForSite };

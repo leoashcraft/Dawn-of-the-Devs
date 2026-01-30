@@ -60,6 +60,20 @@
 </section>
 <% } %>
 
+<section class="nav-stats">
+  <h2>Navigation stats</h2>
+  <p class="hits-total-large"><%= hits.total %></p>
+  <p class="nav-stats-label">total webring navigations from your site</p>
+  <% if (hits.total > 0) { %>
+    <div class="hits-breakdown-large">
+      <span title="Previous">&larr; <%= hits.previous %></span>
+      <span title="Next">&rarr; <%= hits.next %></span>
+      <span title="Random">&#x21af; <%= hits.random %></span>
+      <span title="Home">&#x2302; <%= hits.home %></span>
+    </div>
+  <% } %>
+</section>
+
 <section class="logout">
   <form method="POST" action="/auth/logout">
     <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
