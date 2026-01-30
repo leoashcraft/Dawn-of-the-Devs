@@ -1,6 +1,19 @@
 const db = require('../lib/db');
 
 const VALID_STATUSES = ['pending', 'approved', 'denied', 'banned'];
+const ACTIVE_APPROVED = "active = true AND status = 'approved'";
+
+/**
+ * Parse the JSON profile column on a site row.
+ */
+function parseSite(site) {
+  if (site && site.profile) site.profile = JSON.parse(site.profile);
+  return site;
+}
+
+function parseSites(sites) {
+  return sites.map(parseSite);
+}
 
 /**
  * Get a site by URL. Auto-creates if it doesn't exist (with pending status).
@@ -11,10 +24,7 @@ async function getSite(url) {
     await db.query("INSERT INTO Sites (url, status) VALUES ($1, 'pending')", [url]);
     site = await db.getOne('SELECT * FROM Sites WHERE url = $1', [url]);
   }
-  if (site && site.profile) {
-    site.profile = JSON.parse(site.profile);
-  }
-  return site;
+  return parseSite(site);
 }
 
 /**
@@ -22,10 +32,7 @@ async function getSite(url) {
  */
 async function all() {
   const sites = await db.getAll('SELECT * FROM Sites ORDER BY sorting ASC, timestamp ASC');
-  return sites.map(s => {
-    if (s.profile) s.profile = JSON.parse(s.profile);
-    return s;
-  });
+  return parseSites(sites);
 }
 
 /**
@@ -33,12 +40,9 @@ async function all() {
  */
 async function getActiveSitesWithProfiles() {
   const sites = await db.getAll(
-    "SELECT * FROM Sites WHERE active = true AND status = 'approved' ORDER BY sorting ASC"
+    `SELECT * FROM Sites WHERE ${ACTIVE_APPROVED} ORDER BY sorting ASC`
   );
-  return sites.map(s => {
-    if (s.profile) s.profile = JSON.parse(s.profile);
-    return s;
-  });
+  return parseSites(sites);
 }
 
 /**
@@ -46,19 +50,16 @@ async function getActiveSitesWithProfiles() {
  */
 async function randomActive(excludeUrl) {
   if (excludeUrl) {
-    const site = await db.getOne(
-      "SELECT * FROM Sites WHERE active = true AND status = 'approved' AND url != $1 ORDER BY RANDOM() LIMIT 1",
+    const site = parseSite(await db.getOne(
+      `SELECT * FROM Sites WHERE ${ACTIVE_APPROVED} AND url != $1 ORDER BY RANDOM() LIMIT 1`,
       [excludeUrl]
-    );
-    if (site && site.profile) site.profile = JSON.parse(site.profile);
+    ));
     if (!site) return randomActive(null);
     return site;
   }
-  const site = await db.getOne(
-    "SELECT * FROM Sites WHERE active = true AND status = 'approved' ORDER BY RANDOM() LIMIT 1"
-  );
-  if (site && site.profile) site.profile = JSON.parse(site.profile);
-  return site;
+  return parseSite(await db.getOne(
+    `SELECT * FROM Sites WHERE ${ACTIVE_APPROVED} ORDER BY RANDOM() LIMIT 1`
+  ));
 }
 
 /**
@@ -66,26 +67,25 @@ async function randomActive(excludeUrl) {
  */
 async function getNextSite(currentUrl) {
   const current = await db.getOne(
-    "SELECT sorting FROM Sites WHERE url = $1 AND active = true AND status = 'approved'",
+    `SELECT sorting FROM Sites WHERE url = $1 AND ${ACTIVE_APPROVED}`,
     [currentUrl]
   );
   if (!current) return randomActive(currentUrl);
 
   let next = await db.getOne(
-    "SELECT * FROM Sites WHERE active = true AND status = 'approved' AND (sorting > $1 OR (sorting = $2 AND url > $3)) AND url != $4 ORDER BY sorting ASC, url ASC LIMIT 1",
+    `SELECT * FROM Sites WHERE ${ACTIVE_APPROVED} AND (sorting > $1 OR (sorting = $2 AND url > $3)) AND url != $4 ORDER BY sorting ASC, url ASC LIMIT 1`,
     [current.sorting, current.sorting, currentUrl, currentUrl]
   );
 
   if (!next) {
     next = await db.getOne(
-      "SELECT * FROM Sites WHERE active = true AND status = 'approved' AND url != $1 ORDER BY sorting ASC, url ASC LIMIT 1",
+      `SELECT * FROM Sites WHERE ${ACTIVE_APPROVED} AND url != $1 ORDER BY sorting ASC, url ASC LIMIT 1`,
       [currentUrl]
     );
   }
 
   if (!next) return randomActive(null);
-  if (next.profile) next.profile = JSON.parse(next.profile);
-  return next;
+  return parseSite(next);
 }
 
 /**
@@ -93,26 +93,25 @@ async function getNextSite(currentUrl) {
  */
 async function getPreviousSite(currentUrl) {
   const current = await db.getOne(
-    "SELECT sorting FROM Sites WHERE url = $1 AND active = true AND status = 'approved'",
+    `SELECT sorting FROM Sites WHERE url = $1 AND ${ACTIVE_APPROVED}`,
     [currentUrl]
   );
   if (!current) return randomActive(currentUrl);
 
   let prev = await db.getOne(
-    "SELECT * FROM Sites WHERE active = true AND status = 'approved' AND (sorting < $1 OR (sorting = $2 AND url < $3)) AND url != $4 ORDER BY sorting DESC, url DESC LIMIT 1",
+    `SELECT * FROM Sites WHERE ${ACTIVE_APPROVED} AND (sorting < $1 OR (sorting = $2 AND url < $3)) AND url != $4 ORDER BY sorting DESC, url DESC LIMIT 1`,
     [current.sorting, current.sorting, currentUrl, currentUrl]
   );
 
   if (!prev) {
     prev = await db.getOne(
-      "SELECT * FROM Sites WHERE active = true AND status = 'approved' AND url != $1 ORDER BY sorting DESC, url DESC LIMIT 1",
+      `SELECT * FROM Sites WHERE ${ACTIVE_APPROVED} AND url != $1 ORDER BY sorting DESC, url DESC LIMIT 1`,
       [currentUrl]
     );
   }
 
   if (!prev) return randomActive(null);
-  if (prev.profile) prev.profile = JSON.parse(prev.profile);
-  return prev;
+  return parseSite(prev);
 }
 
 /**
@@ -122,10 +121,7 @@ async function unchecked() {
   const sites = await db.getAll(
     'SELECT s.* FROM Sites s LEFT JOIN SiteChecks sc ON s.url = sc.url WHERE sc.url IS NULL'
   );
-  return sites.map(s => {
-    if (s.profile) s.profile = JSON.parse(s.profile);
-    return s;
-  });
+  return parseSites(sites);
 }
 
 /**
@@ -168,10 +164,7 @@ async function allWithStatus(filter) {
   } else {
     sites = await db.getAll('SELECT * FROM Sites ORDER BY timestamp DESC');
   }
-  return sites.map(s => {
-    if (s.profile) s.profile = JSON.parse(s.profile);
-    return s;
-  });
+  return parseSites(sites);
 }
 
 /**

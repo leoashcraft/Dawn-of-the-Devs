@@ -1,5 +1,4 @@
 const Site = require('../models/site');
-const { profileFromCard } = require('../utils/profileHelpers');
 const { cuteUrl } = require('../utils/urlHelpers');
 const { timeAgo } = require('../utils/timeAgo');
 

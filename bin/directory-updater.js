@@ -10,13 +10,10 @@
 
 const Site = require('../models/site');
 const { checkProfile } = require('../utils/profileCheck');
+const { sleep } = require('../utils/sleep');
 const db = require('../lib/db');
 
 const singleUrl = process.argv[2];
-
-async function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 async function updateSite(url) {
   console.log(`Updating: ${url}`);

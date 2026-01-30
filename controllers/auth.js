@@ -1,5 +1,6 @@
 const auth = require('../lib/auth');
 const config = require('../lib/config');
+const { flashError } = require('../lib/middleware');
 const Site = require('../models/site');
 const logger = require('../lib/logger');
 
@@ -20,10 +21,7 @@ async function loginStart(req, res) {
       endpoints = await auth.discoverEndpoints(url);
     } catch (err) {
       logger.warn('Endpoint discovery failed', { url, error: err.message });
-      const message = config.IS_PRODUCTION
-        ? 'Could not reach your site. Please check the URL and try again.'
-        : `Could not reach your site: ${err.message}`;
-      req.session.flash = { type: 'error', message };
+      flashError(req, 'Could not reach your site. Please check the URL and try again.', err);
       return res.redirect('/');
     }
 
@@ -64,10 +62,7 @@ async function loginStart(req, res) {
     return res.redirect(authUrl);
   } catch (err) {
     logger.error('Login start error', { error: err.message });
-    const message = config.IS_PRODUCTION
-      ? 'An error occurred during login. Please try again.'
-      : `Login error: ${err.message}`;
-    req.session.flash = { type: 'error', message };
+    flashError(req, 'An error occurred during login. Please try again.', err);
     return res.redirect('/');
   }
 }
@@ -108,10 +103,7 @@ async function callback(req, res) {
     return res.redirect('/dashboard');
   } catch (err) {
     logger.error('Auth callback error', { error: err.message });
-    const message = config.IS_PRODUCTION
-      ? 'Authentication failed. Please try again.'
-      : `Auth failed: ${err.message}`;
-    req.session.flash = { type: 'error', message };
+    flashError(req, 'Authentication failed. Please try again.', err);
     return res.redirect('/');
   }
 }

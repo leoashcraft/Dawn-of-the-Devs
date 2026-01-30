@@ -43,7 +43,7 @@
 })();
 
 /**
- * Window controls: red dot closes to desktop icons, yellow dot minimizes.
+ * Window controls, floating windows, desktop icons.
  */
 (function () {
   var page = document.querySelector('.page');
@@ -55,12 +55,30 @@
   var win = page ? page.querySelector('.window') : null;
   var infoBtn = document.getElementById('dock-info-btn');
   var infoWin = document.getElementById('info-window');
+  var infoClose = infoWin ? infoWin.querySelector('.info-close') : null;
   var confirmWin = document.getElementById('confirm-leave');
   var confirmCancel = confirmWin ? confirmWin.querySelector('.confirm-cancel') : null;
   var confirmContinue = confirmWin ? confirmWin.querySelector('.confirm-continue') : null;
   var confirmClose = confirmWin ? confirmWin.querySelector('.confirm-close') : null;
   var pendingUrl = null;
   if (!page) return;
+
+  // Shared z-index counter for floating windows
+  var topZ = 10002;
+  function bringToFront(el) {
+    if (!el) return;
+    topZ++;
+    el.style.zIndex = topZ;
+  }
+
+  if (infoWin) {
+    infoWin.addEventListener('mousedown', function () { bringToFront(infoWin); });
+    infoWin.addEventListener('touchstart', function () { bringToFront(infoWin); }, { passive: true });
+  }
+  if (confirmWin) {
+    confirmWin.addEventListener('mousedown', function () { bringToFront(confirmWin); });
+    confirmWin.addEventListener('touchstart', function () { bringToFront(confirmWin); }, { passive: true });
+  }
 
   /**
    * Make an element draggable with click vs drag distinction.
@@ -156,6 +174,84 @@
     el._dragClamp = clamp;
   }
 
+  /**
+   * Make a floating window draggable by its title bar.
+   */
+  function makeWindowDraggable(winEl, barEl) {
+    if (!winEl || !barEl) return;
+    var dragging = false;
+    var dragStartX, dragStartY, winStartX, winStartY;
+
+    barEl.addEventListener('mousedown', function (e) {
+      if (e.target.closest('.dot')) return;
+      dragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      var rect = winEl.getBoundingClientRect();
+      winStartX = rect.left;
+      winStartY = rect.top;
+      winEl.style.left = rect.left + 'px';
+      winEl.style.top = rect.top + 'px';
+      winEl.style.transform = 'none';
+      winEl.classList.add('dragging');
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function (e) {
+      if (!dragging) return;
+      var dx = e.clientX - dragStartX;
+      var dy = e.clientY - dragStartY;
+      var x = winStartX + dx;
+      var y = winStartY + dy;
+      var w = winEl.offsetWidth;
+      var h = winEl.offsetHeight;
+      x = Math.max(0, Math.min(x, window.innerWidth - w));
+      y = Math.max(0, Math.min(y, window.innerHeight - h));
+      winEl.style.left = x + 'px';
+      winEl.style.top = y + 'px';
+    });
+
+    document.addEventListener('mouseup', function () {
+      if (!dragging) return;
+      dragging = false;
+    });
+
+    barEl.addEventListener('touchstart', function (e) {
+      if (e.target.closest('.dot')) return;
+      var t = e.touches[0];
+      dragging = true;
+      dragStartX = t.clientX;
+      dragStartY = t.clientY;
+      var rect = winEl.getBoundingClientRect();
+      winStartX = rect.left;
+      winStartY = rect.top;
+      winEl.style.left = rect.left + 'px';
+      winEl.style.top = rect.top + 'px';
+      winEl.style.transform = 'none';
+      winEl.classList.add('dragging');
+    }, { passive: true });
+
+    document.addEventListener('touchmove', function (e) {
+      if (!dragging) return;
+      var t = e.touches[0];
+      var dx = t.clientX - dragStartX;
+      var dy = t.clientY - dragStartY;
+      var x = winStartX + dx;
+      var y = winStartY + dy;
+      var w = winEl.offsetWidth;
+      var h = winEl.offsetHeight;
+      x = Math.max(0, Math.min(x, window.innerWidth - w));
+      y = Math.max(0, Math.min(y, window.innerHeight - h));
+      winEl.style.left = x + 'px';
+      winEl.style.top = y + 'px';
+    }, { passive: true });
+
+    document.addEventListener('touchend', function () {
+      if (!dragging) return;
+      dragging = false;
+    });
+  }
+
   var dotdIcon = desktopIcons ? desktopIcons.querySelector('[data-action="restore"]') : null;
 
   function getOriginFrom(el) {
@@ -228,6 +324,7 @@
       infoWin.style.transformOrigin = getOriginFrom(sourceEl);
       infoWin.classList.remove('dragging');
       infoWin.classList.add('open');
+      bringToFront(infoWin);
     }
   }
 
@@ -239,6 +336,7 @@
     confirmWin.style.transform = 'translate(-50%, -50%)';
     confirmWin.style.transformOrigin = getOriginFrom(sourceEl);
     confirmWin.classList.add('open');
+    bringToFront(confirmWin);
   }
 
   function showConfirmLeave(url, sourceEl) {
@@ -247,7 +345,6 @@
       // Already open — close first, then reopen with new source
       if (confirmWin.classList.contains('dragging')) {
         // Reset from dragged position back to centered for the close animation
-        var rect = confirmWin.getBoundingClientRect();
         confirmWin.classList.remove('dragging');
         confirmWin.style.left = '50%';
         confirmWin.style.top = '50%';
@@ -271,6 +368,7 @@
     pendingUrl = null;
   }
 
+  // Wire: confirm cancel/continue/close buttons
   if (confirmCancel) confirmCancel.addEventListener('click', closeConfirmLeave);
   if (confirmClose) confirmClose.addEventListener('click', closeConfirmLeave);
   if (confirmContinue) {
@@ -280,7 +378,14 @@
     });
   }
 
-  // Wire up desktop icons
+  // Wire: info close button
+  if (infoClose) {
+    infoClose.addEventListener('click', function () {
+      infoWin.classList.remove('open');
+    });
+  }
+
+  // Wire: desktop icons
   if (desktopIcons) {
     var icons = desktopIcons.querySelectorAll('.desktop-icon');
     for (var i = 0; i < icons.length; i++) {
@@ -321,7 +426,7 @@
     });
   }
 
-  // Red dot: close window, show desktop icons
+  // Wire: red/yellow/green dots
   if (redDot) {
     redDot.addEventListener('click', function () {
       document.body.classList.remove('window-minimized');
@@ -333,7 +438,6 @@
     });
   }
 
-  // Yellow dot: minimize to dock at bottom center
   if (yellowDot) {
     yellowDot.addEventListener('click', function () {
       if (page.classList.contains('minimized')) return;
@@ -350,7 +454,6 @@
     });
   }
 
-  // Green dot: restore from minimized, or toggle maximized
   if (greenDot) {
     greenDot.addEventListener('click', function () {
       if (page.classList.contains('minimized')) {
@@ -361,7 +464,7 @@
     });
   }
 
-  // Dock item click: bounce and restore
+  // Wire: dock restore
   if (macDockItem) {
     macDockItem.addEventListener('click', function () {
       macDockItem.classList.add('bouncing');
@@ -373,7 +476,7 @@
     });
   }
 
-  // Dock link items: intercept and show confirm dialog
+  // Wire: dock links
   var dockLinks = document.querySelectorAll('a.mac-dock-item[href]');
   for (var d = 0; d < dockLinks.length; d++) {
     (function (link) {
@@ -383,198 +486,15 @@
       });
     })(dockLinks[d]);
   }
-})();
 
-/**
- * Info window: open from dock, draggable, editable text.
- */
-(function () {
-  var infoBtn = document.getElementById('dock-info-btn');
-  var infoWin = document.getElementById('info-window');
-  if (!infoBtn || !infoWin) return;
-
-  var closeBtn = infoWin.querySelector('.info-close');
-  var bar = infoWin.querySelector('.info-window-bar');
-  var dragging = false;
-  var dragStartX, dragStartY, winStartX, winStartY;
-
-  // Open info window
-  infoBtn.addEventListener('click', function () {
-    if (infoWin.classList.contains('open')) {
-      infoWin.classList.remove('open');
-      return;
-    }
-    // Reset to centered position
-    infoWin.style.left = '50%';
-    infoWin.style.top = '50%';
-    infoWin.style.transform = 'translate(-50%, -50%)';
-    infoWin.style.transformOrigin = 'bottom center';
-    infoWin.classList.remove('dragging');
-    infoWin.classList.add('open');
-  });
-
-  // Close info window
-  if (closeBtn) {
-    closeBtn.addEventListener('click', function () {
-      infoWin.classList.remove('open');
+  // Wire: dock info button
+  if (infoBtn) {
+    infoBtn.addEventListener('click', function () {
+      toggleInfoWindow(infoBtn);
     });
   }
 
-  // Drag to reposition
-  if (bar) {
-    bar.addEventListener('mousedown', function (e) {
-      if (e.target.closest('.dot')) return;
-      dragging = true;
-      dragStartX = e.clientX;
-      dragStartY = e.clientY;
-      var rect = infoWin.getBoundingClientRect();
-      winStartX = rect.left;
-      winStartY = rect.top;
-      // Switch from centered transform to absolute positioning
-      infoWin.style.left = rect.left + 'px';
-      infoWin.style.top = rect.top + 'px';
-      infoWin.style.transform = 'none';
-      infoWin.classList.add('dragging');
-      e.preventDefault();
-    });
-
-    document.addEventListener('mousemove', function (e) {
-      if (!dragging) return;
-      var dx = e.clientX - dragStartX;
-      var dy = e.clientY - dragStartY;
-      var x = winStartX + dx;
-      var y = winStartY + dy;
-      // Clamp to viewport
-      var w = infoWin.offsetWidth;
-      var h = infoWin.offsetHeight;
-      x = Math.max(0, Math.min(x, window.innerWidth - w));
-      y = Math.max(0, Math.min(y, window.innerHeight - h));
-      infoWin.style.left = x + 'px';
-      infoWin.style.top = y + 'px';
-    });
-
-    document.addEventListener('mouseup', function () {
-      if (!dragging) return;
-      dragging = false;
-    });
-
-    // Touch drag support
-    bar.addEventListener('touchstart', function (e) {
-      if (e.target.closest('.dot')) return;
-      var t = e.touches[0];
-      dragging = true;
-      dragStartX = t.clientX;
-      dragStartY = t.clientY;
-      var rect = infoWin.getBoundingClientRect();
-      winStartX = rect.left;
-      winStartY = rect.top;
-      infoWin.style.left = rect.left + 'px';
-      infoWin.style.top = rect.top + 'px';
-      infoWin.style.transform = 'none';
-      infoWin.classList.add('dragging');
-    }, { passive: true });
-
-    document.addEventListener('touchmove', function (e) {
-      if (!dragging) return;
-      var t = e.touches[0];
-      var dx = t.clientX - dragStartX;
-      var dy = t.clientY - dragStartY;
-      var x = winStartX + dx;
-      var y = winStartY + dy;
-      var w = infoWin.offsetWidth;
-      var h = infoWin.offsetHeight;
-      x = Math.max(0, Math.min(x, window.innerWidth - w));
-      y = Math.max(0, Math.min(y, window.innerHeight - h));
-      infoWin.style.left = x + 'px';
-      infoWin.style.top = y + 'px';
-    }, { passive: true });
-
-    document.addEventListener('touchend', function () {
-      if (!dragging) return;
-      dragging = false;
-    });
-  }
-})();
-
-/**
- * Confirm window: draggable by title bar.
- */
-(function () {
-  var confirmWin = document.getElementById('confirm-leave');
-  if (!confirmWin) return;
-
-  var bar = confirmWin.querySelector('.confirm-window-bar');
-  if (!bar) return;
-
-  var dragging = false;
-  var dragStartX, dragStartY, winStartX, winStartY;
-
-  bar.addEventListener('mousedown', function (e) {
-    if (e.target.closest('.dot')) return;
-    dragging = true;
-    dragStartX = e.clientX;
-    dragStartY = e.clientY;
-    var rect = confirmWin.getBoundingClientRect();
-    winStartX = rect.left;
-    winStartY = rect.top;
-    confirmWin.style.left = rect.left + 'px';
-    confirmWin.style.top = rect.top + 'px';
-    confirmWin.style.transform = 'none';
-    confirmWin.classList.add('dragging');
-    e.preventDefault();
-  });
-
-  document.addEventListener('mousemove', function (e) {
-    if (!dragging) return;
-    var dx = e.clientX - dragStartX;
-    var dy = e.clientY - dragStartY;
-    var x = winStartX + dx;
-    var y = winStartY + dy;
-    var w = confirmWin.offsetWidth;
-    var h = confirmWin.offsetHeight;
-    x = Math.max(0, Math.min(x, window.innerWidth - w));
-    y = Math.max(0, Math.min(y, window.innerHeight - h));
-    confirmWin.style.left = x + 'px';
-    confirmWin.style.top = y + 'px';
-  });
-
-  document.addEventListener('mouseup', function () {
-    if (!dragging) return;
-    dragging = false;
-  });
-
-  bar.addEventListener('touchstart', function (e) {
-    if (e.target.closest('.dot')) return;
-    var t = e.touches[0];
-    dragging = true;
-    dragStartX = t.clientX;
-    dragStartY = t.clientY;
-    var rect = confirmWin.getBoundingClientRect();
-    winStartX = rect.left;
-    winStartY = rect.top;
-    confirmWin.style.left = rect.left + 'px';
-    confirmWin.style.top = rect.top + 'px';
-    confirmWin.style.transform = 'none';
-    confirmWin.classList.add('dragging');
-  }, { passive: true });
-
-  document.addEventListener('touchmove', function (e) {
-    if (!dragging) return;
-    var t = e.touches[0];
-    var dx = t.clientX - dragStartX;
-    var dy = t.clientY - dragStartY;
-    var x = winStartX + dx;
-    var y = winStartY + dy;
-    var w = confirmWin.offsetWidth;
-    var h = confirmWin.offsetHeight;
-    x = Math.max(0, Math.min(x, window.innerWidth - w));
-    y = Math.max(0, Math.min(y, window.innerHeight - h));
-    confirmWin.style.left = x + 'px';
-    confirmWin.style.top = y + 'px';
-  }, { passive: true });
-
-  document.addEventListener('touchend', function () {
-    if (!dragging) return;
-    dragging = false;
-  });
+  // Apply: makeWindowDraggable to info + confirm windows
+  makeWindowDraggable(infoWin, infoWin ? infoWin.querySelector('.info-window-bar') : null);
+  makeWindowDraggable(confirmWin, confirmWin ? confirmWin.querySelector('.confirm-window-bar') : null);
 })();

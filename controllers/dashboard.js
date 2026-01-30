@@ -2,6 +2,7 @@ const Site = require('../models/site');
 const SiteCheck = require('../models/siteCheck');
 const { checkLinks, isActiveFromErrors } = require('../utils/linksCheck');
 const { checkProfile } = require('../utils/profileCheck');
+const { flashError } = require('../lib/middleware');
 const { cuteUrl } = require('../utils/urlHelpers');
 const { timeAgo } = require('../utils/timeAgo');
 const config = require('../lib/config');
@@ -53,10 +54,7 @@ async function checkLinksAction(req, res) {
     }
   } catch (err) {
     logger.error('Link check error', { url: siteUrl, error: err.message });
-    const message = config.IS_PRODUCTION
-      ? 'An error occurred while checking links. Please try again.'
-      : `Error checking links: ${err.message}`;
-    req.session.flash = { type: 'error', message };
+    flashError(req, 'An error occurred while checking links. Please try again.', err);
   }
 
   return res.redirect('/dashboard');
@@ -79,10 +77,7 @@ async function checkProfileAction(req, res) {
     }
   } catch (err) {
     logger.error('Profile check error', { url: siteUrl, error: err.message });
-    const message = config.IS_PRODUCTION
-      ? 'An error occurred while checking your profile. Please try again.'
-      : `Error checking profile: ${err.message}`;
-    req.session.flash = { type: 'error', message };
+    flashError(req, 'An error occurred while checking your profile. Please try again.', err);
   }
 
   return res.redirect('/dashboard');

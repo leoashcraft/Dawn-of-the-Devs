@@ -9,15 +9,4 @@ function cuteUrl(url) {
     .replace(/\/$/, '');
 }
 
-/**
- * Extract the domain (hostname) from a URL.
- */
-function domainFromUrl(url) {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return url;
-  }
-}
-
-module.exports = { cuteUrl, domainFromUrl };
+module.exports = { cuteUrl };

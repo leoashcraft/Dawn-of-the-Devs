@@ -14,14 +14,11 @@ const Site = require('../models/site');
 const SiteCheck = require('../models/siteCheck');
 const GardenJournal = require('../models/gardenJournal');
 const { checkLinks, isActiveFromErrors } = require('../utils/linksCheck');
+const { sleep } = require('../utils/sleep');
 const config = require('../lib/config');
 const db = require('../lib/db');
 
 const singleUrl = process.argv[2];
-
-async function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 function shouldSkip(site) {
   return site.status === 'banned' || site.status === 'denied';
