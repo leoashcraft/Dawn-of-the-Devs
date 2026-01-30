@@ -225,10 +225,10 @@ button.dot {
   top: 24px;
   left: 24px;
   z-index: 9999;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 18px;
   align-items: flex-start;
-  max-width: calc(100vw - 48px);
+  max-height: calc(100vh - 48px);
 }
 
 .desktop-icon {
