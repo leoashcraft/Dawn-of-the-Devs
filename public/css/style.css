@@ -217,46 +217,79 @@ button.dot {
   margin: 0 auto;
 }
 
-/* Dock icon (shown when window is closed) */
+/* Desktop icons (shown when window is closed) */
 
-.dock-icon {
+.desktop-icons {
   display: none;
   position: fixed;
   top: 24px;
   left: 24px;
+  z-index: 9999;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: flex-start;
+  max-width: calc(100vw - 48px);
+}
+
+.desktop-icon {
   width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   border: none;
   background: none;
   padding: 0;
   cursor: pointer;
-  z-index: 9999;
   transition: transform 0.15s ease;
   -webkit-appearance: none;
   appearance: none;
   outline: none;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
+  text-decoration: none;
+  color: inherit;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.dock-icon:hover {
+.desktop-icon:hover {
   transform: scale(1.08);
+  text-decoration: none;
+  color: inherit;
 }
 
-.dock-icon:active {
+.desktop-icon:active {
   transform: scale(0.95);
 }
 
-.dock-icon img {
-  width: 72px;
-  height: 72px;
-  object-fit: cover;
-  border-radius: 16px;
-  border: 1px solid var(--color-border);
-  box-shadow: 0 8px 30px var(--color-shadow);
+.desktop-icon.dragging {
+  position: fixed;
+  z-index: 10000;
 }
 
-.dock-label {
+.desktop-icon-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 30px var(--color-shadow);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+}
+
+img.desktop-icon-img {
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+}
+
+.desktop-icon-img svg {
+  width: 28px;
+  height: 28px;
+}
+
+.desktop-label {
   display: block;
   font-family: var(--font-mono);
   font-size: 10px;
@@ -279,8 +312,11 @@ button.dot {
   pointer-events: none;
 }
 
-.page.closed .dock-icon {
+.page.closed .desktop-icons {
   display: flex;
+}
+
+.page.closed .desktop-icon {
   animation: icon-appear 0.3s 0.3s ease-out both;
 }
 
@@ -308,8 +344,11 @@ button.dot {
   animation: window-restore 0.4s ease-out forwards;
 }
 
-.page.restoring .dock-icon {
+.page.restoring .desktop-icons {
   display: flex;
+}
+
+.page.restoring .desktop-icon {
   animation: icon-disappear 0.2s ease-in forwards;
 }
 
