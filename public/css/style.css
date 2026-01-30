@@ -1376,6 +1376,7 @@ section {
   padding: 0.5rem 0.75rem;
   text-align: left;
   border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
 }
 
 .admin-table th {
@@ -1392,11 +1393,6 @@ section {
   flex-wrap: wrap;
   align-items: center;
   min-height: 100%;
-}
-
-.admin-table td.hits-cell,
-.admin-table td.admin-actions {
-  vertical-align: middle;
 }
 
 .inline-form {
