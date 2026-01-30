@@ -33,6 +33,7 @@
         <th>Status</th>
         <th>Active</th>
         <th>Joined</th>
+        <th>Hits</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -51,6 +52,17 @@
             <% } %>
           </td>
           <td class="time-ago"><%= site.timeAgo %></td>
+          <td class="hits-cell">
+            <span class="hits-total"><%= site.hits.total %></span>
+            <% if (site.hits.total > 0) { %>
+              <span class="hits-breakdown">
+                <span title="Previous">&larr; <%= site.hits.previous %></span>
+                <span title="Next">&rarr; <%= site.hits.next %></span>
+                <span title="Random">&#x21af; <%= site.hits.random %></span>
+                <span title="Home">&#x2302; <%= site.hits.home %></span>
+              </span>
+            <% } %>
+          </td>
           <td class="admin-actions">
             <% if (site.status !== 'approved') { %>
               <form method="POST" action="/admin/status" class="inline-form">

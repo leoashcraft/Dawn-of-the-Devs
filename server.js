@@ -117,6 +117,7 @@ app.get('/terms', pages.terms);
 app.get('/next', asyncHandler(navigation.next));
 app.get('/previous', asyncHandler(navigation.previous));
 app.get('/random', asyncHandler(navigation.random));
+app.get('/home', asyncHandler(navigation.home));
 
 // Legacy slug-based navigation
 app.get('/:slug/next', asyncHandler(navigation.next));

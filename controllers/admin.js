@@ -1,4 +1,5 @@
 const Site = require('../models/site');
+const NavigationHit = require('../models/navigationHit');
 const { cuteUrl } = require('../utils/urlHelpers');
 const { timeAgo } = require('../utils/timeAgo');
 const logger = require('../lib/logger');
@@ -10,11 +11,20 @@ async function dashboard(req, res) {
   const filter = req.query.filter || null;
   const sites = await Site.allWithStatus(filter);
   const counts = await Site.countByStatus();
+  const hitRows = await NavigationHit.countByReferrer();
+
+  const hitsMap = {};
+  for (const row of hitRows) {
+    hitsMap[row.referrer_url] = row;
+  }
+
+  const defaultHits = { total: 0, previous: 0, next: 0, random: 0, home: 0 };
 
   const sitesDisplay = sites.map(s => ({
     ...s,
     cuteUrl: cuteUrl(s.url),
     timeAgo: timeAgo(s.timestamp),
+    hits: hitsMap[s.url] || { ...defaultHits },
   }));
 
   res.render('admin/dashboard', {

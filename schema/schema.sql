@@ -24,6 +24,18 @@ CREATE TABLE IF NOT EXISTS GardenJournals (
   next_check TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS NavigationHits (
+  id SERIAL PRIMARY KEY,
+  referrer_url TEXT NOT NULL,
+  target_url TEXT NOT NULL,
+  link_type TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_navigationhits_referrer ON NavigationHits(referrer_url);
+CREATE INDEX IF NOT EXISTS idx_navigationhits_created ON NavigationHits(created_at);
+CREATE INDEX IF NOT EXISTS idx_navigationhits_link_type ON NavigationHits(link_type);
+
 CREATE TABLE IF NOT EXISTS Migrations (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
