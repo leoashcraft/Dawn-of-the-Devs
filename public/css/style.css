@@ -631,7 +631,7 @@ a.mac-dock-item:hover {
 
 @keyframes info-window-open {
   from {
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate(-50%, -50%) scale(0.5);
     opacity: 0;
   }
   to {
@@ -693,6 +693,80 @@ a.mac-dock-item:hover {
   font-size: 12px;
   letter-spacing: 0.02em;
   user-select: none;
+}
+
+/* Confirm window (external link prompt) */
+
+.confirm-window {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  z-index: 10002;
+  border: 1px solid var(--color-border);
+  border-radius: var(--window-radius);
+  background: linear-gradient(180deg, rgba(26, 22, 24, 0.98), rgba(20, 16, 18, 0.96));
+  box-shadow: 0 18px 60px var(--color-shadow), 0 2px 0 var(--color-border-subtle);
+  overflow: hidden;
+  flex-direction: column;
+}
+
+.confirm-window.open {
+  display: flex;
+  animation: confirm-window-open 0.25s ease-out;
+}
+
+@keyframes confirm-window-open {
+  from {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.confirm-window-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(180deg, rgba(30, 24, 26, 0.95), rgba(24, 20, 22, 0.95));
+  user-select: none;
+}
+
+.confirm-window-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.confirm-window-title {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.confirm-window-body {
+  padding: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--color-text);
+}
+
+.confirm-window-body p {
+  margin: 0 0 1rem;
+}
+
+.confirm-window-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 /* Header */

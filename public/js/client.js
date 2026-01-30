@@ -55,6 +55,11 @@
   var win = page ? page.querySelector('.window') : null;
   var infoBtn = document.getElementById('dock-info-btn');
   var infoWin = document.getElementById('info-window');
+  var confirmWin = document.getElementById('confirm-leave');
+  var confirmCancel = confirmWin ? confirmWin.querySelector('.confirm-cancel') : null;
+  var confirmContinue = confirmWin ? confirmWin.querySelector('.confirm-continue') : null;
+  var confirmClose = confirmWin ? confirmWin.querySelector('.confirm-close') : null;
+  var pendingUrl = null;
   if (!page) return;
 
   /**
@@ -151,8 +156,32 @@
     el._dragClamp = clamp;
   }
 
+  var dotdIcon = desktopIcons ? desktopIcons.querySelector('[data-action="restore"]') : null;
+
+  function getOriginFrom(el) {
+    if (!el) return 'top left';
+    var rect = el.getBoundingClientRect();
+    var cx = rect.left + rect.width / 2;
+    var cy = rect.top + rect.height / 2;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var third = 1 / 3;
+
+    var x, y;
+    if (cx < vw * third) x = 'left';
+    else if (cx > vw * (1 - third)) x = 'right';
+    else x = 'center';
+
+    if (cy < vh * third) y = 'top';
+    else if (cy > vh * (1 - third)) y = 'bottom';
+    else y = 'center';
+
+    if (x === 'center' && y === 'center') return 'center';
+    return y + ' ' + x;
+  }
+
   function restoreWindow() {
-    if (win) win.style.transformOrigin = 'top left';
+    if (win) win.style.transformOrigin = getOriginFrom(dotdIcon);
     page.classList.remove('closed');
     page.classList.remove('maximized');
     page.classList.add('restoring');
@@ -188,7 +217,7 @@
     }
   }
 
-  function toggleInfoWindow() {
+  function toggleInfoWindow(sourceEl) {
     if (!infoWin) return;
     if (infoWin.classList.contains('open')) {
       infoWin.classList.remove('open');
@@ -196,9 +225,35 @@
       infoWin.style.left = '50%';
       infoWin.style.top = '50%';
       infoWin.style.transform = 'translate(-50%, -50%)';
+      infoWin.style.transformOrigin = getOriginFrom(sourceEl);
       infoWin.classList.remove('dragging');
       infoWin.classList.add('open');
     }
+  }
+
+  function showConfirmLeave(url, sourceEl) {
+    if (!confirmWin) { window.open(url, '_blank'); return; }
+    pendingUrl = url;
+    confirmWin.style.left = '50%';
+    confirmWin.style.top = '50%';
+    confirmWin.style.transform = 'translate(-50%, -50%)';
+    confirmWin.style.transformOrigin = getOriginFrom(sourceEl);
+    confirmWin.classList.add('open');
+  }
+
+  function closeConfirmLeave() {
+    if (!confirmWin) return;
+    confirmWin.classList.remove('open');
+    pendingUrl = null;
+  }
+
+  if (confirmCancel) confirmCancel.addEventListener('click', closeConfirmLeave);
+  if (confirmClose) confirmClose.addEventListener('click', closeConfirmLeave);
+  if (confirmContinue) {
+    confirmContinue.addEventListener('click', function () {
+      if (pendingUrl) window.open(pendingUrl, '_blank');
+      closeConfirmLeave();
+    });
   }
 
   // Wire up desktop icons
@@ -216,11 +271,11 @@
           });
         } else if (action === 'link' && href) {
           makeDraggable(icon, function () {
-            window.open(href, '_blank');
+            showConfirmLeave(href, icon);
           });
         } else if (action === 'about') {
           makeDraggable(icon, function () {
-            toggleInfoWindow();
+            toggleInfoWindow(icon);
           });
         }
       })(icons[i]);
@@ -249,7 +304,7 @@
       page.classList.remove('minimized');
       page.classList.remove('maximized');
       resetDesktopIcons();
-      if (win) win.style.transformOrigin = 'top left';
+      if (win) win.style.transformOrigin = getOriginFrom(dotdIcon);
       page.classList.add('closed');
     });
   }
@@ -293,6 +348,17 @@
       restoreFromMinimized();
     });
   }
+
+  // Dock link items: intercept and show confirm dialog
+  var dockLinks = document.querySelectorAll('a.mac-dock-item[href]');
+  for (var d = 0; d < dockLinks.length; d++) {
+    (function (link) {
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        showConfirmLeave(link.getAttribute('href'), link);
+      });
+    })(dockLinks[d]);
+  }
 })();
 
 /**
@@ -318,6 +384,7 @@
     infoWin.style.left = '50%';
     infoWin.style.top = '50%';
     infoWin.style.transform = 'translate(-50%, -50%)';
+    infoWin.style.transformOrigin = 'bottom center';
     infoWin.classList.remove('dragging');
     infoWin.classList.add('open');
   });
