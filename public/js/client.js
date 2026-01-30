@@ -61,6 +61,15 @@
   var confirmContinue = confirmWin ? confirmWin.querySelector('.confirm-continue') : null;
   var confirmClose = confirmWin ? confirmWin.querySelector('.confirm-close') : null;
   var pendingUrl = null;
+  var trashedItems = [];
+  var contextMenu = document.getElementById('context-menu');
+  var contextAction = document.getElementById('context-menu-action');
+  var trashDesktopIcon = document.getElementById('trash-icon');
+  var dockTrashBtn = document.getElementById('dock-trash-btn');
+  var trashWin = document.getElementById('trash-window');
+  var trashWinBody = document.getElementById('trash-window-body');
+  var trashWinClose = trashWin ? trashWin.querySelector('.trash-window-close') : null;
+  var contextTarget = null;
   if (!page) return;
 
   // Shared z-index counter for floating windows
@@ -78,6 +87,186 @@
   if (confirmWin) {
     confirmWin.addEventListener('mousedown', function () { bringToFront(confirmWin); });
     confirmWin.addEventListener('touchstart', function () { bringToFront(confirmWin); }, { passive: true });
+  }
+
+  // Context menu
+  function showContextMenu(x, y, label, callback) {
+    contextAction.textContent = label;
+    contextAction.onclick = function() {
+      hideContextMenu();
+      callback();
+    };
+    contextMenu.classList.add('open');
+    var w = contextMenu.offsetWidth;
+    var h = contextMenu.offsetHeight;
+    if (x + w > window.innerWidth) x = window.innerWidth - w - 4;
+    if (y + h > window.innerHeight) y = window.innerHeight - h - 4;
+    contextMenu.style.left = x + 'px';
+    contextMenu.style.top = y + 'px';
+  }
+
+  function hideContextMenu() {
+    contextMenu.classList.remove('open');
+    contextTarget = null;
+  }
+
+  document.addEventListener('click', hideContextMenu);
+  document.addEventListener('contextmenu', function() {
+    hideContextMenu();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') hideContextMenu();
+  });
+
+  // Trash operations
+  function updateTrashState() {
+    var hasItems = trashedItems.length > 0;
+    if (trashDesktopIcon) trashDesktopIcon.classList.toggle('has-items', hasItems);
+    if (dockTrashBtn) dockTrashBtn.classList.toggle('has-items', hasItems);
+    renderTrashWindow();
+  }
+
+  function trashDesktopIconEl(icon) {
+    var item = {
+      type: 'desktop',
+      label: icon.querySelector('.desktop-label').textContent,
+      action: icon.getAttribute('data-action'),
+      href: icon.getAttribute('href') || '',
+      iconHtml: icon.querySelector('.desktop-icon-img').outerHTML,
+      element: icon,
+    };
+
+    if (item.action === 'about' && infoWin && infoWin.classList.contains('open')) {
+      infoWin.classList.remove('open');
+    }
+
+    icon.classList.add('poofing');
+    icon.addEventListener('animationend', function handler() {
+      icon.removeEventListener('animationend', handler);
+      if (icon._placeholder) { icon._placeholder.remove(); icon._placeholder = null; }
+      icon.style.display = 'none';
+      icon.classList.remove('poofing', 'dragging');
+      icon.style.left = '';
+      icon.style.top = '';
+    });
+
+    trashedItems.push(item);
+    updateTrashState();
+  }
+
+  function trashDockItem(dockItem) {
+    var item = {
+      type: 'dock',
+      label: dockItem.getAttribute('title') || 'Dock Item',
+      href: dockItem.getAttribute('href') || '',
+      iconHtml: dockItem.querySelector('.mac-dock-icon, .mac-dock-icon-img').outerHTML,
+      element: dockItem,
+    };
+
+    dockItem.classList.add('poofing');
+    dockItem.addEventListener('animationend', function handler() {
+      dockItem.removeEventListener('animationend', handler);
+      dockItem.style.display = 'none';
+      dockItem.classList.remove('poofing');
+      cleanupDockSeparators();
+    });
+
+    trashedItems.push(item);
+    updateTrashState();
+  }
+
+  function restoreFromTrash(index) {
+    var item = trashedItems.splice(index, 1)[0];
+    if (!item) return;
+
+    if (item.type === 'desktop') {
+      item.element.style.display = '';
+      item.element.classList.remove('dragging');
+      item.element.style.left = '';
+      item.element.style.top = '';
+    } else if (item.type === 'dock') {
+      item.element.style.display = '';
+      cleanupDockSeparators();
+    }
+
+    updateTrashState();
+  }
+
+  function cleanupDockSeparators() {
+    var items = document.querySelectorAll('.mac-dock-items > *');
+    var prevWasSep = true;
+    for (var i = 0; i < items.length; i++) {
+      var el = items[i];
+      if (el.classList.contains('mac-dock-separator')) {
+        if (prevWasSep) {
+          el.style.display = 'none';
+        } else {
+          el.style.display = '';
+        }
+        prevWasSep = true;
+      } else if (el.style.display === 'none') {
+        continue;
+      } else {
+        prevWasSep = false;
+      }
+    }
+    for (var j = items.length - 1; j >= 0; j--) {
+      var last = items[j];
+      if (last.style.display === 'none') continue;
+      if (last.classList.contains('mac-dock-separator')) {
+        last.style.display = 'none';
+      }
+      break;
+    }
+  }
+
+  // Trash window rendering
+  function renderTrashWindow() {
+    if (!trashWinBody) return;
+    if (trashedItems.length === 0) {
+      trashWinBody.innerHTML = '<p class="trash-empty-message">Trash is empty</p>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < trashedItems.length; i++) {
+      var item = trashedItems[i];
+      html += '<div class="trash-item" data-trash-index="' + i + '">';
+      html += '<span class="trash-item-icon">' + item.iconHtml + '</span>';
+      html += '<span class="trash-item-label">' + item.label + '</span>';
+      html += '<span class="trash-item-source">' + item.type + '</span>';
+      html += '</div>';
+    }
+    trashWinBody.innerHTML = html;
+
+    var trashItems = trashWinBody.querySelectorAll('.trash-item');
+    for (var j = 0; j < trashItems.length; j++) {
+      (function(el) {
+        var idx = parseInt(el.getAttribute('data-trash-index'), 10);
+        el.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          showContextMenu(e.clientX, e.clientY, 'Put Back', function() {
+            restoreFromTrash(idx);
+          });
+        });
+      })(trashItems[j]);
+    }
+  }
+
+  function toggleTrashWindow(sourceEl) {
+    if (!trashWin) return;
+    if (trashWin.classList.contains('open')) {
+      trashWin.classList.remove('open');
+    } else {
+      trashWin.style.left = '50%';
+      trashWin.style.top = '50%';
+      trashWin.style.transform = 'translate(-50%, -50%)';
+      trashWin.style.transformOrigin = getOriginFrom(sourceEl);
+      trashWin.classList.remove('dragging');
+      trashWin.classList.add('open');
+      bringToFront(trashWin);
+      renderTrashWindow();
+    }
   }
 
   /**
@@ -106,6 +295,14 @@
       elStartX = rect.left;
       elStartY = rect.top;
       el.style.transition = 'none';
+
+      // Create placeholder to hold the icon's spot in flex layout
+      var placeholder = document.createElement('div');
+      placeholder.className = 'desktop-icon-placeholder';
+      placeholder.style.width = el.offsetWidth + 'px';
+      placeholder.style.height = el.offsetHeight + 'px';
+      el.parentNode.insertBefore(placeholder, el);
+      el._placeholder = placeholder;
     }
 
     function moveDrag(clientX, clientY) {
@@ -123,12 +320,44 @@
       var pos = clamp(elStartX + dx, elStartY + dy);
       el.style.left = pos.x + 'px';
       el.style.top = pos.y + 'px';
+
+      // Drag-over highlighting for trash icon
+      if (trashDesktopIcon && el.getAttribute('data-action') !== 'trash') {
+        var trashRect = trashDesktopIcon.getBoundingClientRect();
+        var elRect = el.getBoundingClientRect();
+        var elCX = elRect.left + elRect.width / 2;
+        var elCY = elRect.top + elRect.height / 2;
+        var over = elCX >= trashRect.left && elCX <= trashRect.right &&
+                   elCY >= trashRect.top && elCY <= trashRect.bottom;
+        trashDesktopIcon.classList.toggle('drag-over', over);
+      }
     }
 
     function endDrag() {
       if (!dragging) return;
       dragging = false;
       el.style.transition = '';
+
+      if (trashDesktopIcon) trashDesktopIcon.classList.remove('drag-over');
+
+      // Check if dropped on trash icon (desktop)
+      if (dragMoved && trashDesktopIcon && el.getAttribute('data-action') !== 'trash') {
+        var trashRect = trashDesktopIcon.getBoundingClientRect();
+        var elRect = el.getBoundingClientRect();
+        var elCX = elRect.left + elRect.width / 2;
+        var elCY = elRect.top + elRect.height / 2;
+        if (elCX >= trashRect.left && elCX <= trashRect.right &&
+            elCY >= trashRect.top && elCY <= trashRect.bottom) {
+          trashDesktopIconEl(el);
+          return;
+        }
+      }
+
+      // Normal end: remove placeholder
+      if (el._placeholder) {
+        el._placeholder.remove();
+        el._placeholder = null;
+      }
     }
 
     el.addEventListener('mousedown', function (e) {
@@ -311,6 +540,7 @@
       icons[i].style.top = '';
       icons[i].style.transition = '';
     }
+    if (trashDesktopIcon) trashDesktopIcon.classList.remove('drag-over');
   }
 
   function toggleInfoWindow(sourceEl) {
@@ -407,6 +637,17 @@
             toggleInfoWindow(icon);
           });
         }
+
+        // Context menu: Move to Trash
+        if (icon.getAttribute('data-action') !== 'trash') {
+          icon.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            showContextMenu(e.clientX, e.clientY, 'Move to Trash', function() {
+              trashDesktopIconEl(icon);
+            });
+          });
+        }
       })(icons[i]);
     }
 
@@ -484,6 +725,13 @@
         e.preventDefault();
         showConfirmLeave(link.getAttribute('href'), link);
       });
+      link.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        showContextMenu(e.clientX, e.clientY, 'Remove from Dock', function() {
+          trashDockItem(link);
+        });
+      });
     })(dockLinks[d]);
   }
 
@@ -494,7 +742,37 @@
     });
   }
 
-  // Apply: makeWindowDraggable to info + confirm windows
+  // Apply: makeWindowDraggable to info + confirm + trash windows
   makeWindowDraggable(infoWin, infoWin ? infoWin.querySelector('.info-window-bar') : null);
   makeWindowDraggable(confirmWin, confirmWin ? confirmWin.querySelector('.confirm-window-bar') : null);
+  makeWindowDraggable(trashWin, trashWin ? trashWin.querySelector('.trash-window-bar') : null);
+
+  if (trashWin) {
+    trashWin.addEventListener('mousedown', function() { bringToFront(trashWin); });
+    trashWin.addEventListener('touchstart', function() { bringToFront(trashWin); }, { passive: true });
+  }
+
+  // Wire: trash desktop icon click
+  if (trashDesktopIcon) {
+    var trashBtn = trashDesktopIcon.querySelector('.desktop-icon');
+    if (trashBtn) {
+      trashBtn.addEventListener('click', function() {
+        toggleTrashWindow(trashDesktopIcon);
+      });
+    }
+  }
+
+  // Wire: dock trash button click
+  if (dockTrashBtn) {
+    dockTrashBtn.addEventListener('click', function() {
+      toggleTrashWindow(dockTrashBtn);
+    });
+  }
+
+  // Wire: trash window close
+  if (trashWinClose) {
+    trashWinClose.addEventListener('click', function() {
+      trashWin.classList.remove('open');
+    });
+  }
 })();

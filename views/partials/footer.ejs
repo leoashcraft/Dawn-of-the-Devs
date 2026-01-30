@@ -35,6 +35,17 @@
         <span class="desktop-label">About</span>
       </button>
     </div>
+
+    <div class="trash-icon" id="trash-icon">
+      <button class="desktop-icon" type="button" data-action="trash" aria-label="Trash">
+        <span class="desktop-icon-img trash-icon-img">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+          </svg>
+        </span>
+        <span class="desktop-label">Trash</span>
+      </button>
+    </div>
   </div>
 
   <div class="mac-dock" aria-label="Application dock">
@@ -63,6 +74,15 @@
 
       <button class="mac-dock-item" type="button" aria-label="About" title="About" id="dock-info-btn">
         <span class="mac-dock-icon mac-dock-icon-info">i</span>
+      </button>
+
+      <span class="mac-dock-separator mac-dock-separator-trash"></span>
+      <button class="mac-dock-item mac-dock-trash" type="button" aria-label="Trash" title="Trash" id="dock-trash-btn">
+        <span class="mac-dock-icon trash-dock-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+          </svg>
+        </span>
       </button>
     </div>
   </div>
@@ -96,6 +116,24 @@ Created with Node.js, Express &amp; EJS</div>
         <button class="btn confirm-continue" type="button">Continue</button>
       </div>
     </div>
+  </div>
+
+  <div class="trash-window" id="trash-window">
+    <div class="trash-window-bar">
+      <div class="trash-window-dots">
+        <button class="dot dot-red trash-window-close" type="button" aria-label="Close"></button>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+      </div>
+      <span class="trash-window-title">Trash</span>
+    </div>
+    <div class="trash-window-body" id="trash-window-body">
+      <p class="trash-empty-message">Trash is empty</p>
+    </div>
+  </div>
+
+  <div class="context-menu" id="context-menu">
+    <button class="context-menu-item" id="context-menu-action" type="button"></button>
   </div>
 
   <script src="/js/client.js"></script>
