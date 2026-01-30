@@ -263,7 +263,7 @@ button.dot {
 
 .desktop-icon.dragging {
   position: fixed;
-  z-index: 10000;
+  z-index: 9997;
 }
 
 .desktop-icon-img {
@@ -615,6 +615,7 @@ a.mac-dock-item:hover {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 420px;
+  max-width: calc(100vw - 32px);
   z-index: 10001;
   border: 1px solid var(--color-border);
   border-radius: var(--window-radius);
@@ -704,6 +705,7 @@ a.mac-dock-item:hover {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 380px;
+  max-width: calc(100vw - 32px);
   z-index: 10002;
   border: 1px solid var(--color-border);
   border-radius: var(--window-radius);
@@ -1538,7 +1540,7 @@ section {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 9999;
+  z-index: 9998;
 }
 
 .page.closed .trash-icon {
@@ -1588,6 +1590,7 @@ section {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 360px;
+  max-width: calc(100vw - 32px);
   max-height: 400px;
   z-index: 10001;
   border: 1px solid var(--color-border);
@@ -1745,5 +1748,27 @@ section {
 
   .stat-pills {
     flex-wrap: wrap;
+  }
+
+  /* Hide trashcan on mobile */
+  .trash-icon,
+  .mac-dock-trash {
+    display: none !important;
+  }
+
+  /* Hide nownownow.com link on mobile */
+  .desktop-icon[href*="nownownow.com"],
+  .mac-dock-item[href*="nownownow.com"] {
+    display: none !important;
+  }
+
+  /* Ensure dock remains interactive on mobile */
+  .mac-dock {
+    pointer-events: auto;
+  }
+
+  .mac-dock-item {
+    pointer-events: auto;
+    touch-action: none;
   }
 }

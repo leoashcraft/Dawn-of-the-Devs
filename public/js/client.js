@@ -85,7 +85,8 @@
 
   function isOverAnyTrash(x, y) {
     if (trashDesktopIcon && trashDesktopIcon.offsetParent !== null) {
-      if (pointInRect(x, y, trashDesktopIcon.getBoundingClientRect())) return true;
+      var trashBtn = trashDesktopIcon.querySelector('.desktop-icon');
+      if (trashBtn && pointInRect(x, y, trashBtn.getBoundingClientRect())) return true;
     }
     if (dockTrashBtn && dockTrashBtn.offsetParent !== null) {
       if (pointInRect(x, y, dockTrashBtn.getBoundingClientRect())) return true;
@@ -95,8 +96,11 @@
 
   function highlightTrash(x, y) {
     if (trashDesktopIcon && trashDesktopIcon.offsetParent !== null) {
-      trashDesktopIcon.classList.toggle('drag-over',
-        pointInRect(x, y, trashDesktopIcon.getBoundingClientRect()));
+      var trashBtn = trashDesktopIcon.querySelector('.desktop-icon');
+      if (trashBtn) {
+        trashDesktopIcon.classList.toggle('drag-over',
+          pointInRect(x, y, trashBtn.getBoundingClientRect()));
+      }
     }
     if (dockTrashBtn && dockTrashBtn.offsetParent !== null) {
       dockTrashBtn.classList.toggle('drag-over',
