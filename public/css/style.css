@@ -729,6 +729,22 @@ a.mac-dock-item:hover {
   }
 }
 
+.confirm-window.closing {
+  display: flex;
+  animation: confirm-window-close 0.2s ease-in forwards;
+}
+
+@keyframes confirm-window-close {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+}
+
 .confirm-window.dragging {
   animation: none;
 }

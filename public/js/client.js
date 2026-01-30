@@ -231,9 +231,9 @@
     }
   }
 
-  function showConfirmLeave(url, sourceEl) {
-    if (!confirmWin) { window.open(url, '_blank'); return; }
+  function openConfirm(url, sourceEl) {
     pendingUrl = url;
+    confirmWin.classList.remove('closing', 'dragging');
     confirmWin.style.left = '50%';
     confirmWin.style.top = '50%';
     confirmWin.style.transform = 'translate(-50%, -50%)';
@@ -241,10 +241,33 @@
     confirmWin.classList.add('open');
   }
 
+  function showConfirmLeave(url, sourceEl) {
+    if (!confirmWin) { window.open(url, '_blank'); return; }
+    if (confirmWin.classList.contains('open')) {
+      // Already open — close first, then reopen with new source
+      if (confirmWin.classList.contains('dragging')) {
+        // Reset from dragged position back to centered for the close animation
+        var rect = confirmWin.getBoundingClientRect();
+        confirmWin.classList.remove('dragging');
+        confirmWin.style.left = '50%';
+        confirmWin.style.top = '50%';
+        confirmWin.style.transform = 'translate(-50%, -50%)';
+      }
+      confirmWin.classList.remove('open');
+      confirmWin.classList.add('closing');
+      confirmWin.addEventListener('animationend', function handler() {
+        confirmWin.removeEventListener('animationend', handler);
+        confirmWin.classList.remove('closing');
+        openConfirm(url, sourceEl);
+      });
+      return;
+    }
+    openConfirm(url, sourceEl);
+  }
+
   function closeConfirmLeave() {
     if (!confirmWin) return;
-    confirmWin.classList.remove('open');
-    confirmWin.classList.remove('dragging');
+    confirmWin.classList.remove('open', 'closing', 'dragging');
     pendingUrl = null;
   }
 
