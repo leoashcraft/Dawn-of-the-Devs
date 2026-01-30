@@ -729,6 +729,10 @@ a.mac-dock-item:hover {
   }
 }
 
+.confirm-window.dragging {
+  animation: none;
+}
+
 .confirm-window-bar {
   display: flex;
   align-items: center;
@@ -736,7 +740,12 @@ a.mac-dock-item:hover {
   padding: 10px 14px;
   border-bottom: 1px solid var(--color-border);
   background: linear-gradient(180deg, rgba(30, 24, 26, 0.95), rgba(24, 20, 22, 0.95));
+  cursor: grab;
   user-select: none;
+}
+
+.confirm-window-bar:active {
+  cursor: grabbing;
 }
 
 .confirm-window-dots {

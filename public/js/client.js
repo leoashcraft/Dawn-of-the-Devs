@@ -244,6 +244,7 @@
   function closeConfirmLeave() {
     if (!confirmWin) return;
     confirmWin.classList.remove('open');
+    confirmWin.classList.remove('dragging');
     pendingUrl = null;
   }
 
@@ -470,4 +471,87 @@
       dragging = false;
     });
   }
+})();
+
+/**
+ * Confirm window: draggable by title bar.
+ */
+(function () {
+  var confirmWin = document.getElementById('confirm-leave');
+  if (!confirmWin) return;
+
+  var bar = confirmWin.querySelector('.confirm-window-bar');
+  if (!bar) return;
+
+  var dragging = false;
+  var dragStartX, dragStartY, winStartX, winStartY;
+
+  bar.addEventListener('mousedown', function (e) {
+    if (e.target.closest('.dot')) return;
+    dragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    var rect = confirmWin.getBoundingClientRect();
+    winStartX = rect.left;
+    winStartY = rect.top;
+    confirmWin.style.left = rect.left + 'px';
+    confirmWin.style.top = rect.top + 'px';
+    confirmWin.style.transform = 'none';
+    confirmWin.classList.add('dragging');
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function (e) {
+    if (!dragging) return;
+    var dx = e.clientX - dragStartX;
+    var dy = e.clientY - dragStartY;
+    var x = winStartX + dx;
+    var y = winStartY + dy;
+    var w = confirmWin.offsetWidth;
+    var h = confirmWin.offsetHeight;
+    x = Math.max(0, Math.min(x, window.innerWidth - w));
+    y = Math.max(0, Math.min(y, window.innerHeight - h));
+    confirmWin.style.left = x + 'px';
+    confirmWin.style.top = y + 'px';
+  });
+
+  document.addEventListener('mouseup', function () {
+    if (!dragging) return;
+    dragging = false;
+  });
+
+  bar.addEventListener('touchstart', function (e) {
+    if (e.target.closest('.dot')) return;
+    var t = e.touches[0];
+    dragging = true;
+    dragStartX = t.clientX;
+    dragStartY = t.clientY;
+    var rect = confirmWin.getBoundingClientRect();
+    winStartX = rect.left;
+    winStartY = rect.top;
+    confirmWin.style.left = rect.left + 'px';
+    confirmWin.style.top = rect.top + 'px';
+    confirmWin.style.transform = 'none';
+    confirmWin.classList.add('dragging');
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function (e) {
+    if (!dragging) return;
+    var t = e.touches[0];
+    var dx = t.clientX - dragStartX;
+    var dy = t.clientY - dragStartY;
+    var x = winStartX + dx;
+    var y = winStartY + dy;
+    var w = confirmWin.offsetWidth;
+    var h = confirmWin.offsetHeight;
+    x = Math.max(0, Math.min(x, window.innerWidth - w));
+    y = Math.max(0, Math.min(y, window.innerHeight - h));
+    confirmWin.style.left = x + 'px';
+    confirmWin.style.top = y + 'px';
+  }, { passive: true });
+
+  document.addEventListener('touchend', function () {
+    if (!dragging) return;
+    dragging = false;
+  });
 })();
