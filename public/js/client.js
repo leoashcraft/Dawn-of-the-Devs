@@ -43,9 +43,11 @@
 })();
 
 /**
- * Window controls, floating windows, desktop icons.
+ * Window controls, floating windows, desktop icons, dock, trash system.
  */
 (function () {
+  // ===== DOM References =====
+
   var page = document.querySelector('.page');
   var redDot = document.querySelector('.dot-red');
   var yellowDot = document.querySelector('.dot-yellow');
@@ -60,8 +62,6 @@
   var confirmCancel = confirmWin ? confirmWin.querySelector('.confirm-cancel') : null;
   var confirmContinue = confirmWin ? confirmWin.querySelector('.confirm-continue') : null;
   var confirmClose = confirmWin ? confirmWin.querySelector('.confirm-close') : null;
-  var pendingUrl = null;
-  var trashedItems = [];
   var contextMenu = document.getElementById('context-menu');
   var contextAction = document.getElementById('context-menu-action');
   var trashDesktopIcon = document.getElementById('trash-icon');
@@ -69,30 +69,71 @@
   var trashWin = document.getElementById('trash-window');
   var trashWinBody = document.getElementById('trash-window-body');
   var trashWinClose = trashWin ? trashWin.querySelector('.trash-window-close') : null;
-  var contextTarget = null;
+
+  var pendingUrl = null;
+  var trashedKeys = [];
+  var itemMap = {};
+  var topZ = 10002;
+
   if (!page) return;
 
-  // Shared z-index counter for floating windows
-  var topZ = 10002;
+  // ===== Utilities =====
+
+  function pointInRect(x, y, r) {
+    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+  }
+
+  function isOverAnyTrash(x, y) {
+    if (trashDesktopIcon && trashDesktopIcon.offsetParent !== null) {
+      if (pointInRect(x, y, trashDesktopIcon.getBoundingClientRect())) return true;
+    }
+    if (dockTrashBtn && dockTrashBtn.offsetParent !== null) {
+      if (pointInRect(x, y, dockTrashBtn.getBoundingClientRect())) return true;
+    }
+    return false;
+  }
+
+  function highlightTrash(x, y) {
+    if (trashDesktopIcon && trashDesktopIcon.offsetParent !== null) {
+      trashDesktopIcon.classList.toggle('drag-over',
+        pointInRect(x, y, trashDesktopIcon.getBoundingClientRect()));
+    }
+    if (dockTrashBtn && dockTrashBtn.offsetParent !== null) {
+      dockTrashBtn.classList.toggle('drag-over',
+        pointInRect(x, y, dockTrashBtn.getBoundingClientRect()));
+    }
+  }
+
+  function clearTrashHighlight() {
+    if (trashDesktopIcon) trashDesktopIcon.classList.remove('drag-over');
+    if (dockTrashBtn) dockTrashBtn.classList.remove('drag-over');
+  }
+
   function bringToFront(el) {
     if (!el) return;
     topZ++;
     el.style.zIndex = topZ;
   }
 
-  if (infoWin) {
-    infoWin.addEventListener('mousedown', function () { bringToFront(infoWin); });
-    infoWin.addEventListener('touchstart', function () { bringToFront(infoWin); }, { passive: true });
-  }
-  if (confirmWin) {
-    confirmWin.addEventListener('mousedown', function () { bringToFront(confirmWin); });
-    confirmWin.addEventListener('touchstart', function () { bringToFront(confirmWin); }, { passive: true });
+  function getOriginFrom(el) {
+    if (!el) return 'top left';
+    var rect = el.getBoundingClientRect();
+    var cx = rect.left + rect.width / 2;
+    var cy = rect.top + rect.height / 2;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var third = 1 / 3;
+    var x = cx < vw * third ? 'left' : cx > vw * (1 - third) ? 'right' : 'center';
+    var y = cy < vh * third ? 'top' : cy > vh * (1 - third) ? 'bottom' : 'center';
+    if (x === 'center' && y === 'center') return 'center';
+    return y + ' ' + x;
   }
 
-  // Context menu
+  // ===== Context Menu =====
+
   function showContextMenu(x, y, label, callback) {
     contextAction.textContent = label;
-    contextAction.onclick = function() {
+    contextAction.onclick = function () {
       hideContextMenu();
       callback();
     };
@@ -107,89 +148,129 @@
 
   function hideContextMenu() {
     contextMenu.classList.remove('open');
-    contextTarget = null;
   }
 
   document.addEventListener('click', hideContextMenu);
-  document.addEventListener('contextmenu', function() {
-    hideContextMenu();
-  });
-  document.addEventListener('keydown', function(e) {
+  document.addEventListener('contextmenu', hideContextMenu);
+  document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') hideContextMenu();
   });
 
-  // Trash operations
-  function updateTrashState() {
-    var hasItems = trashedItems.length > 0;
-    if (trashDesktopIcon) trashDesktopIcon.classList.toggle('has-items', hasItems);
-    if (dockTrashBtn) dockTrashBtn.classList.toggle('has-items', hasItems);
-    renderTrashWindow();
+  // ===== Item Registry =====
+
+  function buildItemMap() {
+    if (desktopIcons) {
+      var dIcons = desktopIcons.querySelectorAll('.desktop-icon');
+      for (var i = 0; i < dIcons.length; i++) {
+        var key = dIcons[i].getAttribute('href') || dIcons[i].getAttribute('data-action');
+        if (!key || key === 'trash') continue;
+        if (!itemMap[key]) itemMap[key] = { key: key };
+        itemMap[key].desktopEl = dIcons[i];
+        itemMap[key].label = dIcons[i].querySelector('.desktop-label').textContent;
+        itemMap[key].iconHtml = dIcons[i].querySelector('.desktop-icon-img').outerHTML;
+      }
+    }
+    var allDock = document.querySelectorAll('.mac-dock-item');
+    for (var j = 0; j < allDock.length; j++) {
+      var dock = allDock[j];
+      var dKey;
+      if (dock.classList.contains('mac-dock-restore')) dKey = 'restore';
+      else if (dock.id === 'dock-info-btn') dKey = 'about';
+      else if (dock.id === 'dock-trash-btn') continue;
+      else dKey = dock.getAttribute('href');
+      if (!dKey) continue;
+      if (!itemMap[dKey]) itemMap[dKey] = { key: dKey };
+      itemMap[dKey].dockEl = dock;
+      if (!itemMap[dKey].label) itemMap[dKey].label = dock.getAttribute('title') || '';
+      if (!itemMap[dKey].iconHtml) {
+        var ic = dock.querySelector('.mac-dock-icon, .mac-dock-icon-img');
+        if (ic) itemMap[dKey].iconHtml = ic.outerHTML;
+      }
+    }
   }
 
-  function trashDesktopIconEl(icon) {
-    var item = {
-      type: 'desktop',
-      label: icon.querySelector('.desktop-label').textContent,
-      action: icon.getAttribute('data-action'),
-      href: icon.getAttribute('href') || '',
-      iconHtml: icon.querySelector('.desktop-icon-img').outerHTML,
-      element: icon,
-    };
+  buildItemMap();
 
-    if (item.action === 'about' && infoWin && infoWin.classList.contains('open')) {
+  // ===== Trash Operations =====
+
+  function hideItemElements(key) {
+    var entry = itemMap[key];
+    if (!entry) return;
+    if (entry.desktopEl) {
+      var el = entry.desktopEl;
+      if (el._placeholder) { el._placeholder.remove(); el._placeholder = null; }
+      el.style.display = 'none';
+      el.classList.remove('poofing', 'dragging');
+      el.style.left = '';
+      el.style.top = '';
+    }
+    if (entry.dockEl) {
+      entry.dockEl.style.display = 'none';
+      entry.dockEl.classList.remove('poofing');
+      cleanupDockSeparators();
+    }
+  }
+
+  function trashItem(key, sourceEl) {
+    if (!itemMap[key]) return;
+    if (trashedKeys.indexOf(key) !== -1) return;
+    trashedKeys.push(key);
+
+    if (key === 'about' && infoWin && infoWin.classList.contains('open')) {
       infoWin.classList.remove('open');
     }
 
-    icon.classList.add('poofing');
-    icon.addEventListener('animationend', function handler() {
-      icon.removeEventListener('animationend', handler);
-      if (icon._placeholder) { icon._placeholder.remove(); icon._placeholder = null; }
-      icon.style.display = 'none';
-      icon.classList.remove('poofing', 'dragging');
-      icon.style.left = '';
-      icon.style.top = '';
-    });
+    var hidden = false;
+    function doHide() {
+      if (hidden) return;
+      hidden = true;
+      if (sourceEl) sourceEl.classList.remove('poofing');
+      hideItemElements(key);
+    }
 
-    trashedItems.push(item);
+    if (sourceEl) {
+      sourceEl.classList.add('poofing');
+      sourceEl.addEventListener('animationend', function handler() {
+        sourceEl.removeEventListener('animationend', handler);
+        doHide();
+      });
+      setTimeout(doHide, 400);
+    } else {
+      doHide();
+    }
+
     updateTrashState();
   }
 
-  function trashDockItem(dockItem) {
-    var item = {
-      type: 'dock',
-      label: dockItem.getAttribute('title') || 'Dock Item',
-      href: dockItem.getAttribute('href') || '',
-      iconHtml: dockItem.querySelector('.mac-dock-icon, .mac-dock-icon-img').outerHTML,
-      element: dockItem,
-    };
+  function restoreItem(key) {
+    var idx = trashedKeys.indexOf(key);
+    if (idx === -1) return;
+    trashedKeys.splice(idx, 1);
 
-    dockItem.classList.add('poofing');
-    dockItem.addEventListener('animationend', function handler() {
-      dockItem.removeEventListener('animationend', handler);
-      dockItem.style.display = 'none';
-      dockItem.classList.remove('poofing');
-      cleanupDockSeparators();
-    });
+    var entry = itemMap[key];
+    if (!entry) return;
 
-    trashedItems.push(item);
-    updateTrashState();
-  }
-
-  function restoreFromTrash(index) {
-    var item = trashedItems.splice(index, 1)[0];
-    if (!item) return;
-
-    if (item.type === 'desktop') {
-      item.element.style.display = '';
-      item.element.classList.remove('dragging');
-      item.element.style.left = '';
-      item.element.style.top = '';
-    } else if (item.type === 'dock') {
-      item.element.style.display = '';
+    if (entry.desktopEl) {
+      entry.desktopEl.style.display = '';
+      entry.desktopEl.classList.remove('dragging', 'poofing');
+      entry.desktopEl.style.left = '';
+      entry.desktopEl.style.top = '';
+      entry.desktopEl.style.transition = '';
+    }
+    if (entry.dockEl) {
+      entry.dockEl.style.display = '';
+      entry.dockEl.classList.remove('poofing');
       cleanupDockSeparators();
     }
 
     updateTrashState();
+  }
+
+  function updateTrashState() {
+    var hasItems = trashedKeys.length > 0;
+    if (trashDesktopIcon) trashDesktopIcon.classList.toggle('has-items', hasItems);
+    if (dockTrashBtn) dockTrashBtn.classList.toggle('has-items', hasItems);
+    if (trashWin && trashWin.classList.contains('open')) renderTrashWindow();
   }
 
   function cleanupDockSeparators() {
@@ -198,11 +279,7 @@
     for (var i = 0; i < items.length; i++) {
       var el = items[i];
       if (el.classList.contains('mac-dock-separator')) {
-        if (prevWasSep) {
-          el.style.display = 'none';
-        } else {
-          el.style.display = '';
-        }
+        el.style.display = prevWasSep ? 'none' : '';
         prevWasSep = true;
       } else if (el.style.display === 'none') {
         continue;
@@ -213,43 +290,51 @@
     for (var j = items.length - 1; j >= 0; j--) {
       var last = items[j];
       if (last.style.display === 'none') continue;
-      if (last.classList.contains('mac-dock-separator')) {
-        last.style.display = 'none';
-      }
+      if (last.classList.contains('mac-dock-separator')) last.style.display = 'none';
       break;
     }
   }
 
-  // Trash window rendering
+  // ===== Trash Window =====
+
   function renderTrashWindow() {
     if (!trashWinBody) return;
-    if (trashedItems.length === 0) {
+    if (trashedKeys.length === 0) {
       trashWinBody.innerHTML = '<p class="trash-empty-message">Trash is empty</p>';
       return;
     }
     var html = '';
-    for (var i = 0; i < trashedItems.length; i++) {
-      var item = trashedItems[i];
-      html += '<div class="trash-item" data-trash-index="' + i + '">';
-      html += '<span class="trash-item-icon">' + item.iconHtml + '</span>';
-      html += '<span class="trash-item-label">' + item.label + '</span>';
-      html += '<span class="trash-item-source">' + item.type + '</span>';
+    for (var i = 0; i < trashedKeys.length; i++) {
+      var entry = itemMap[trashedKeys[i]];
+      if (!entry) continue;
+      html += '<div class="trash-window-icon" data-trash-key="' + entry.key + '">';
+      html += entry.iconHtml;
+      html += '<span class="desktop-label">' + entry.label + '</span>';
       html += '</div>';
     }
     trashWinBody.innerHTML = html;
 
-    var trashItems = trashWinBody.querySelectorAll('.trash-item');
-    for (var j = 0; j < trashItems.length; j++) {
-      (function(el) {
-        var idx = parseInt(el.getAttribute('data-trash-index'), 10);
-        el.addEventListener('contextmenu', function(e) {
+    var nodes = trashWinBody.querySelectorAll('.trash-window-icon');
+    for (var j = 0; j < nodes.length; j++) {
+      (function (el) {
+        var k = el.getAttribute('data-trash-key');
+        el.addEventListener('contextmenu', function (e) {
           e.preventDefault();
           e.stopPropagation();
-          showContextMenu(e.clientX, e.clientY, 'Put Back', function() {
-            restoreFromTrash(idx);
+          showContextMenu(e.clientX, e.clientY, 'Put Back', function () {
+            restoreItem(k);
           });
         });
-      })(trashItems[j]);
+        el.addEventListener('mousedown', function (e) {
+          if (e.button !== 0) return;
+          startCloneDrag('trash', el, k, e.clientX, e.clientY);
+          e.preventDefault();
+        });
+        el.addEventListener('touchstart', function (e) {
+          var t = e.touches[0];
+          startCloneDrag('trash', el, k, t.clientX, t.clientY);
+        }, { passive: true });
+      })(nodes[j]);
     }
   }
 
@@ -269,10 +354,82 @@
     }
   }
 
-  /**
-   * Make an element draggable with click vs drag distinction.
-   * onClick is called only when the user clicks without dragging.
-   */
+  // ===== Clone Drag System (dock items + trash items) =====
+
+  var cloneDrag = {
+    active: false, source: null, key: null, item: null, clone: null,
+    startX: 0, startY: 0, offsetX: 0, offsetY: 0, moved: false
+  };
+
+  function startCloneDrag(source, el, key, clientX, clientY) {
+    cloneDrag.active = true;
+    cloneDrag.source = source;
+    cloneDrag.key = key;
+    cloneDrag.item = el;
+    cloneDrag.moved = false;
+    cloneDrag.startX = clientX;
+    cloneDrag.startY = clientY;
+    var rect = el.getBoundingClientRect();
+    cloneDrag.offsetX = clientX - rect.left;
+    cloneDrag.offsetY = clientY - rect.top;
+    var clone = el.cloneNode(true);
+    clone.style.cssText = 'position:fixed;z-index:20001;pointer-events:none;opacity:0.8;transform:none;';
+    clone.style.left = rect.left + 'px';
+    clone.style.top = rect.top + 'px';
+    document.body.appendChild(clone);
+    cloneDrag.clone = clone;
+  }
+
+  function moveCloneDrag(clientX, clientY) {
+    if (!cloneDrag.active) return;
+    var dx = clientX - cloneDrag.startX;
+    var dy = clientY - cloneDrag.startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) cloneDrag.moved = true;
+    if (!cloneDrag.moved) return;
+    if (cloneDrag.clone) {
+      cloneDrag.clone.style.left = (clientX - cloneDrag.offsetX) + 'px';
+      cloneDrag.clone.style.top = (clientY - cloneDrag.offsetY) + 'px';
+    }
+    if (cloneDrag.source === 'dock') highlightTrash(clientX, clientY);
+  }
+
+  function endCloneDrag(clientX, clientY) {
+    if (!cloneDrag.active) return;
+    cloneDrag.active = false;
+    var source = cloneDrag.source;
+    var key = cloneDrag.key;
+    var moved = cloneDrag.moved;
+    var item = cloneDrag.item;
+    if (cloneDrag.clone) { cloneDrag.clone.remove(); cloneDrag.clone = null; }
+    clearTrashHighlight();
+
+    if (moved && item) item._wasDragged = true;
+    if (!moved) return;
+
+    if (source === 'dock' && isOverAnyTrash(clientX, clientY)) {
+      trashItem(key, item);
+    } else if (source === 'trash' && trashWin) {
+      if (!pointInRect(clientX, clientY, trashWin.getBoundingClientRect())) {
+        restoreItem(key);
+      }
+    }
+  }
+
+  document.addEventListener('mousemove', function (e) { moveCloneDrag(e.clientX, e.clientY); });
+  document.addEventListener('mouseup', function (e) { endCloneDrag(e.clientX, e.clientY); });
+  document.addEventListener('touchmove', function (e) {
+    if (!cloneDrag.active) return;
+    var t = e.touches[0];
+    moveCloneDrag(t.clientX, t.clientY);
+  }, { passive: true });
+  document.addEventListener('touchend', function (e) {
+    if (!cloneDrag.active) return;
+    var t = e.changedTouches[0];
+    endCloneDrag(t.clientX, t.clientY);
+  });
+
+  // ===== Desktop Icon Drag (position-based) =====
+
   function makeDraggable(el, onClick) {
     var dragging = false;
     var dragMoved = false;
@@ -295,14 +452,6 @@
       elStartX = rect.left;
       elStartY = rect.top;
       el.style.transition = 'none';
-
-      // Create placeholder to hold the icon's spot in flex layout
-      var placeholder = document.createElement('div');
-      placeholder.className = 'desktop-icon-placeholder';
-      placeholder.style.width = el.offsetWidth + 'px';
-      placeholder.style.height = el.offsetHeight + 'px';
-      el.parentNode.insertBefore(placeholder, el);
-      el._placeholder = placeholder;
     }
 
     function moveDrag(clientX, clientY) {
@@ -311,8 +460,13 @@
       var dy = clientY - dragStartY;
       if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragMoved = true;
       if (!dragMoved) return;
-      // Switch to fixed positioning on first real drag
       if (!el.classList.contains('dragging')) {
+        var placeholder = document.createElement('div');
+        placeholder.className = 'desktop-icon-placeholder';
+        placeholder.style.width = el.offsetWidth + 'px';
+        placeholder.style.height = el.offsetHeight + 'px';
+        el.parentNode.insertBefore(placeholder, el);
+        el._placeholder = placeholder;
         el.classList.add('dragging');
         el.style.left = elStartX + 'px';
         el.style.top = elStartY + 'px';
@@ -320,44 +474,29 @@
       var pos = clamp(elStartX + dx, elStartY + dy);
       el.style.left = pos.x + 'px';
       el.style.top = pos.y + 'px';
-
-      // Drag-over highlighting for trash icon
-      if (trashDesktopIcon && el.getAttribute('data-action') !== 'trash') {
-        var trashRect = trashDesktopIcon.getBoundingClientRect();
-        var elRect = el.getBoundingClientRect();
-        var elCX = elRect.left + elRect.width / 2;
-        var elCY = elRect.top + elRect.height / 2;
-        var over = elCX >= trashRect.left && elCX <= trashRect.right &&
-                   elCY >= trashRect.top && elCY <= trashRect.bottom;
-        trashDesktopIcon.classList.toggle('drag-over', over);
-      }
+      var c = el.getBoundingClientRect();
+      var cx = c.left + c.width / 2;
+      var cy = c.top + c.height / 2;
+      highlightTrash(cx, cy);
     }
 
     function endDrag() {
       if (!dragging) return;
       dragging = false;
       el.style.transition = '';
+      clearTrashHighlight();
 
-      if (trashDesktopIcon) trashDesktopIcon.classList.remove('drag-over');
-
-      // Check if dropped on trash icon (desktop)
-      if (dragMoved && trashDesktopIcon && el.getAttribute('data-action') !== 'trash') {
-        var trashRect = trashDesktopIcon.getBoundingClientRect();
-        var elRect = el.getBoundingClientRect();
-        var elCX = elRect.left + elRect.width / 2;
-        var elCY = elRect.top + elRect.height / 2;
-        if (elCX >= trashRect.left && elCX <= trashRect.right &&
-            elCY >= trashRect.top && elCY <= trashRect.bottom) {
-          trashDesktopIconEl(el);
-          return;
+      if (dragMoved) {
+        var c = el.getBoundingClientRect();
+        var cx = c.left + c.width / 2;
+        var cy = c.top + c.height / 2;
+        if (isOverAnyTrash(cx, cy)) {
+          var key = el.getAttribute('href') || el.getAttribute('data-action');
+          if (key) { trashItem(key, el); return; }
         }
       }
 
-      // Normal end: remove placeholder
-      if (el._placeholder) {
-        el._placeholder.remove();
-        el._placeholder = null;
-      }
+      if (el._placeholder) { el._placeholder.remove(); el._placeholder = null; }
     }
 
     el.addEventListener('mousedown', function (e) {
@@ -365,57 +504,31 @@
       startDrag(e.clientX, e.clientY);
       e.preventDefault();
     });
-
-    document.addEventListener('mousemove', function (e) {
-      if (!dragging) return;
-      moveDrag(e.clientX, e.clientY);
-    });
-
-    document.addEventListener('mouseup', function () {
-      endDrag();
-    });
-
-    el.addEventListener('touchstart', function (e) {
-      startDrag(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: true });
-
-    document.addEventListener('touchmove', function (e) {
-      if (!dragging) return;
-      moveDrag(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: true });
-
-    document.addEventListener('touchend', function () {
-      endDrag();
-    });
+    document.addEventListener('mousemove', function (e) { if (dragging) moveDrag(e.clientX, e.clientY); });
+    document.addEventListener('mouseup', function () { endDrag(); });
+    el.addEventListener('touchstart', function (e) { startDrag(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+    document.addEventListener('touchmove', function (e) { if (dragging) moveDrag(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+    document.addEventListener('touchend', function () { endDrag(); });
 
     el.addEventListener('click', function (e) {
-      if (dragMoved) {
-        e.preventDefault();
-        return;
-      }
-      if (onClick) {
-        e.preventDefault();
-        onClick();
-      }
+      if (dragMoved) { e.preventDefault(); return; }
+      if (onClick) { e.preventDefault(); onClick(); }
     });
 
-    // Reclaim helper for resize clamping
     el._dragClamp = clamp;
   }
 
-  /**
-   * Make a floating window draggable by its title bar.
-   */
+  // ===== Window Dragging =====
+
   function makeWindowDraggable(winEl, barEl) {
     if (!winEl || !barEl) return;
     var dragging = false;
     var dragStartX, dragStartY, winStartX, winStartY;
 
-    barEl.addEventListener('mousedown', function (e) {
-      if (e.target.closest('.dot')) return;
+    function start(clientX, clientY) {
       dragging = true;
-      dragStartX = e.clientX;
-      dragStartY = e.clientY;
+      dragStartX = clientX;
+      dragStartY = clientY;
       var rect = winEl.getBoundingClientRect();
       winStartX = rect.left;
       winStartY = rect.top;
@@ -423,87 +536,49 @@
       winEl.style.top = rect.top + 'px';
       winEl.style.transform = 'none';
       winEl.classList.add('dragging');
-      e.preventDefault();
-    });
+    }
 
-    document.addEventListener('mousemove', function (e) {
+    function move(clientX, clientY) {
       if (!dragging) return;
-      var dx = e.clientX - dragStartX;
-      var dy = e.clientY - dragStartY;
-      var x = winStartX + dx;
-      var y = winStartY + dy;
+      var x = winStartX + clientX - dragStartX;
+      var y = winStartY + clientY - dragStartY;
       var w = winEl.offsetWidth;
       var h = winEl.offsetHeight;
       x = Math.max(0, Math.min(x, window.innerWidth - w));
       y = Math.max(0, Math.min(y, window.innerHeight - h));
       winEl.style.left = x + 'px';
       winEl.style.top = y + 'px';
-    });
+    }
 
-    document.addEventListener('mouseup', function () {
+    function end() {
       if (!dragging) return;
       dragging = false;
+    }
+
+    barEl.addEventListener('mousedown', function (e) {
+      if (e.target.closest('.dot')) return;
+      start(e.clientX, e.clientY);
+      e.preventDefault();
     });
+    document.addEventListener('mousemove', function (e) { move(e.clientX, e.clientY); });
+    document.addEventListener('mouseup', end);
 
     barEl.addEventListener('touchstart', function (e) {
       if (e.target.closest('.dot')) return;
       var t = e.touches[0];
-      dragging = true;
-      dragStartX = t.clientX;
-      dragStartY = t.clientY;
-      var rect = winEl.getBoundingClientRect();
-      winStartX = rect.left;
-      winStartY = rect.top;
-      winEl.style.left = rect.left + 'px';
-      winEl.style.top = rect.top + 'px';
-      winEl.style.transform = 'none';
-      winEl.classList.add('dragging');
+      start(t.clientX, t.clientY);
     }, { passive: true });
-
     document.addEventListener('touchmove', function (e) {
       if (!dragging) return;
       var t = e.touches[0];
-      var dx = t.clientX - dragStartX;
-      var dy = t.clientY - dragStartY;
-      var x = winStartX + dx;
-      var y = winStartY + dy;
-      var w = winEl.offsetWidth;
-      var h = winEl.offsetHeight;
-      x = Math.max(0, Math.min(x, window.innerWidth - w));
-      y = Math.max(0, Math.min(y, window.innerHeight - h));
-      winEl.style.left = x + 'px';
-      winEl.style.top = y + 'px';
+      move(t.clientX, t.clientY);
     }, { passive: true });
-
-    document.addEventListener('touchend', function () {
-      if (!dragging) return;
-      dragging = false;
-    });
+    document.addEventListener('touchend', end);
   }
+
+  // ===== Window Management =====
 
   var dotdIcon = desktopIcons ? desktopIcons.querySelector('[data-action="restore"]') : null;
-
-  function getOriginFrom(el) {
-    if (!el) return 'top left';
-    var rect = el.getBoundingClientRect();
-    var cx = rect.left + rect.width / 2;
-    var cy = rect.top + rect.height / 2;
-    var vw = window.innerWidth;
-    var vh = window.innerHeight;
-    var third = 1 / 3;
-
-    var x, y;
-    if (cx < vw * third) x = 'left';
-    else if (cx > vw * (1 - third)) x = 'right';
-    else x = 'center';
-
-    if (cy < vh * third) y = 'top';
-    else if (cy > vh * (1 - third)) y = 'bottom';
-    else y = 'center';
-
-    if (x === 'center' && y === 'center') return 'center';
-    return y + ' ' + x;
-  }
 
   function restoreWindow() {
     if (win) win.style.transformOrigin = getOriginFrom(dotdIcon);
@@ -540,7 +615,7 @@
       icons[i].style.top = '';
       icons[i].style.transition = '';
     }
-    if (trashDesktopIcon) trashDesktopIcon.classList.remove('drag-over');
+    clearTrashHighlight();
   }
 
   function toggleInfoWindow(sourceEl) {
@@ -572,9 +647,7 @@
   function showConfirmLeave(url, sourceEl) {
     if (!confirmWin) { window.open(url, '_blank'); return; }
     if (confirmWin.classList.contains('open')) {
-      // Already open — close first, then reopen with new source
       if (confirmWin.classList.contains('dragging')) {
-        // Reset from dragged position back to centered for the close animation
         confirmWin.classList.remove('dragging');
         confirmWin.style.left = '50%';
         confirmWin.style.top = '50%';
@@ -598,7 +671,8 @@
     pendingUrl = null;
   }
 
-  // Wire: confirm cancel/continue/close buttons
+  // ===== Wiring: Confirm Window =====
+
   if (confirmCancel) confirmCancel.addEventListener('click', closeConfirmLeave);
   if (confirmClose) confirmClose.addEventListener('click', closeConfirmLeave);
   if (confirmContinue) {
@@ -608,14 +682,16 @@
     });
   }
 
-  // Wire: info close button
+  // ===== Wiring: Info Window =====
+
   if (infoClose) {
     infoClose.addEventListener('click', function () {
       infoWin.classList.remove('open');
     });
   }
 
-  // Wire: desktop icons
+  // ===== Wiring: Desktop Icons =====
+
   if (desktopIcons) {
     var icons = desktopIcons.querySelectorAll('.desktop-icon');
     for (var i = 0; i < icons.length; i++) {
@@ -624,34 +700,26 @@
         var href = icon.getAttribute('href');
 
         if (action === 'restore') {
-          makeDraggable(icon, function () {
-            resetDesktopIcons();
-            restoreWindow();
-          });
+          makeDraggable(icon, function () { resetDesktopIcons(); restoreWindow(); });
         } else if (action === 'link' && href) {
-          makeDraggable(icon, function () {
-            showConfirmLeave(href, icon);
-          });
+          makeDraggable(icon, function () { showConfirmLeave(href, icon); });
         } else if (action === 'about') {
-          makeDraggable(icon, function () {
-            toggleInfoWindow(icon);
-          });
+          makeDraggable(icon, function () { toggleInfoWindow(icon); });
         }
 
-        // Context menu: Move to Trash
-        if (icon.getAttribute('data-action') !== 'trash') {
-          icon.addEventListener('contextmenu', function(e) {
+        if (action !== 'trash') {
+          icon.addEventListener('contextmenu', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            showContextMenu(e.clientX, e.clientY, 'Move to Trash', function() {
-              trashDesktopIconEl(icon);
+            var key = href || action;
+            showContextMenu(e.clientX, e.clientY, 'Move to Trash', function () {
+              trashItem(key, icon);
             });
           });
         }
       })(icons[i]);
     }
 
-    // Clamp all dragged icons on resize
     window.addEventListener('resize', function () {
       if (!page.classList.contains('closed')) return;
       var allIcons = desktopIcons.querySelectorAll('.desktop-icon.dragging');
@@ -667,7 +735,8 @@
     });
   }
 
-  // Wire: red/yellow/green dots
+  // ===== Wiring: Window Dots =====
+
   if (redDot) {
     redDot.addEventListener('click', function () {
       document.body.classList.remove('window-minimized');
@@ -705,9 +774,20 @@
     });
   }
 
-  // Wire: dock restore
+  // ===== Wiring: Dock =====
+
   if (macDockItem) {
+    macDockItem.addEventListener('mousedown', function (e) {
+      if (e.button !== 0) return;
+      startCloneDrag('dock', macDockItem, 'restore', e.clientX, e.clientY);
+      e.preventDefault();
+    });
+    macDockItem.addEventListener('touchstart', function (e) {
+      var t = e.touches[0];
+      startCloneDrag('dock', macDockItem, 'restore', t.clientX, t.clientY);
+    }, { passive: true });
     macDockItem.addEventListener('click', function () {
+      if (macDockItem._wasDragged) { macDockItem._wasDragged = false; return; }
       macDockItem.classList.add('bouncing');
       macDockItem.addEventListener('animationend', function handler() {
         macDockItem.classList.remove('bouncing');
@@ -715,64 +795,99 @@
       });
       restoreFromMinimized();
     });
+    macDockItem.addEventListener('contextmenu', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      showContextMenu(e.clientX, e.clientY, 'Remove from Dock', function () {
+        trashItem('restore', macDockItem);
+      });
+    });
   }
 
-  // Wire: dock links
   var dockLinks = document.querySelectorAll('a.mac-dock-item[href]');
   for (var d = 0; d < dockLinks.length; d++) {
     (function (link) {
+      var key = link.getAttribute('href');
+      link.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+        startCloneDrag('dock', link, key, e.clientX, e.clientY);
+        e.preventDefault();
+      });
+      link.addEventListener('touchstart', function (e) {
+        var t = e.touches[0];
+        startCloneDrag('dock', link, key, t.clientX, t.clientY);
+      }, { passive: true });
       link.addEventListener('click', function (e) {
         e.preventDefault();
-        showConfirmLeave(link.getAttribute('href'), link);
+        if (link._wasDragged) { link._wasDragged = false; return; }
+        showConfirmLeave(key, link);
       });
-      link.addEventListener('contextmenu', function(e) {
+      link.addEventListener('contextmenu', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        showContextMenu(e.clientX, e.clientY, 'Remove from Dock', function() {
-          trashDockItem(link);
+        showContextMenu(e.clientX, e.clientY, 'Remove from Dock', function () {
+          trashItem(key, link);
         });
       });
     })(dockLinks[d]);
   }
 
-  // Wire: dock info button
   if (infoBtn) {
+    infoBtn.addEventListener('mousedown', function (e) {
+      if (e.button !== 0) return;
+      startCloneDrag('dock', infoBtn, 'about', e.clientX, e.clientY);
+      e.preventDefault();
+    });
+    infoBtn.addEventListener('touchstart', function (e) {
+      var t = e.touches[0];
+      startCloneDrag('dock', infoBtn, 'about', t.clientX, t.clientY);
+    }, { passive: true });
     infoBtn.addEventListener('click', function () {
+      if (infoBtn._wasDragged) { infoBtn._wasDragged = false; return; }
       toggleInfoWindow(infoBtn);
+    });
+    infoBtn.addEventListener('contextmenu', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      showContextMenu(e.clientX, e.clientY, 'Remove from Dock', function () {
+        trashItem('about', infoBtn);
+      });
     });
   }
 
-  // Apply: makeWindowDraggable to info + confirm + trash windows
-  makeWindowDraggable(infoWin, infoWin ? infoWin.querySelector('.info-window-bar') : null);
-  makeWindowDraggable(confirmWin, confirmWin ? confirmWin.querySelector('.confirm-window-bar') : null);
-  makeWindowDraggable(trashWin, trashWin ? trashWin.querySelector('.trash-window-bar') : null);
+  // ===== Wiring: Trash Icon & Window =====
 
-  if (trashWin) {
-    trashWin.addEventListener('mousedown', function() { bringToFront(trashWin); });
-    trashWin.addEventListener('touchstart', function() { bringToFront(trashWin); }, { passive: true });
-  }
-
-  // Wire: trash desktop icon click
   if (trashDesktopIcon) {
     var trashBtn = trashDesktopIcon.querySelector('.desktop-icon');
     if (trashBtn) {
-      trashBtn.addEventListener('click', function() {
+      trashBtn.addEventListener('click', function () {
         toggleTrashWindow(trashDesktopIcon);
       });
     }
   }
 
-  // Wire: dock trash button click
   if (dockTrashBtn) {
-    dockTrashBtn.addEventListener('click', function() {
+    dockTrashBtn.addEventListener('click', function () {
+      if (dockTrashBtn._wasDragged) { dockTrashBtn._wasDragged = false; return; }
       toggleTrashWindow(dockTrashBtn);
     });
   }
 
-  // Wire: trash window close
   if (trashWinClose) {
-    trashWinClose.addEventListener('click', function() {
+    trashWinClose.addEventListener('click', function () {
       trashWin.classList.remove('open');
     });
   }
+
+  // ===== Wiring: Window Dragging & Focus =====
+
+  makeWindowDraggable(infoWin, infoWin ? infoWin.querySelector('.info-window-bar') : null);
+  makeWindowDraggable(confirmWin, confirmWin ? confirmWin.querySelector('.confirm-window-bar') : null);
+  makeWindowDraggable(trashWin, trashWin ? trashWin.querySelector('.trash-window-bar') : null);
+
+  [infoWin, confirmWin, trashWin].forEach(function (w) {
+    if (!w) return;
+    w.addEventListener('mousedown', function () { bringToFront(w); });
+    w.addEventListener('touchstart', function () { bringToFront(w); }, { passive: true });
+  });
 })();
