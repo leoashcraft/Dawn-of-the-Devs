@@ -1,7 +1,4 @@
 <div class="code-block">
-  <pre><code>&lt;a href="<%= baseUrl %>/previous" aria-label="<%= webringConfig.previousLabel %>" title="<%= webringConfig.previousTitle %>"&gt;&amp;larr;&lt;/a&gt;
-&lt;a href="<%= baseUrl %>/home" aria-label="<%= webringConfig.homeLabel %>" title="<%= webringConfig.homeTitle %>"&gt;<%= webringConfig.homeText %>&lt;/a&gt;
-&lt;a href="<%= baseUrl %>/next" aria-label="<%= webringConfig.nextLabel %>" title="<%= webringConfig.nextTitle %>"&gt;&amp;rarr;&lt;/a&gt;
-&lt;a href="<%= baseUrl %>/random" aria-label="<%= webringConfig.randomLabel %>" title="<%= webringConfig.randomTitle %>"&gt;&amp;#x21AF;&lt;/a&gt;</code></pre>
+  <pre><code><%- webringHtml %></code></pre>
   <button class="copy-btn" type="button" aria-label="Copy to clipboard" title="Copy">Copy</button>
 </div>

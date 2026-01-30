@@ -3,19 +3,30 @@ const NavigationHit = require('../models/navigationHit');
 const { cuteUrl } = require('../utils/urlHelpers');
 const { timeAgo } = require('../utils/timeAgo');
 const logger = require('../lib/logger');
+const sanitizeHtml = require('sanitize-html');
 
-// Default webring configuration - this would normally come from database
-const DEFAULT_CONFIG = {
-  homeText: 'Dawn of the Devs Webring',
-  homeLabel: 'Dawn of the Devs Webring Homepage',
-  homeTitle: 'Dawn of the Devs Webring Homepage',
-  previousLabel: 'Previous Dawn of the Devs Webring site',
-  previousTitle: 'Previous Dawn of the Devs Webring site',
-  nextLabel: 'Next Dawn of the Devs Webring site',
-  nextTitle: 'Next Dawn of the Devs Webring site',
-  randomLabel: 'Random Dawn of the Devs Webring site',
-  randomTitle: 'Random Dawn of the Devs Webring site',
-};
+// Default webring HTML code - this would normally come from database
+const DEFAULT_HTML = `<a href="https://dawnofthedevs.com/previous" aria-label="Previous Dawn of the Devs Webring site" title="Previous Dawn of the Devs Webring site">&larr;</a>
+<a href="https://dawnofthedevs.com/home" aria-label="Dawn of the Devs Webring Homepage" title="Dawn of the Devs Webring Homepage">Dawn of the Devs Webring</a>
+<a href="https://dawnofthedevs.com/next" aria-label="Next Dawn of the Devs Webring site" title="Next Dawn of the Devs Webring site">&rarr;</a>
+<a href="https://dawnofthedevs.com/random" aria-label="Random Dawn of the Devs Webring site" title="Random Dawn of the Devs Webring site">&#x21AF;</a>`;
+
+// Sanitize HTML input for security
+function sanitizeWebringHtml(html) {
+  if (!html || typeof html !== 'string') {
+    return DEFAULT_HTML;
+  }
+
+  return sanitizeHtml(html, {
+    allowedTags: ['a'],
+    allowedAttributes: {
+      'a': ['href', 'aria-label', 'title']
+    },
+    allowedSchemes: ['https'],
+    enforceHtmlBoundary: true,
+    disallowedTagsMode: 'discard'
+  });
+}
 
 /**
  * GET /admin - Admin dashboard with site moderation.
@@ -41,14 +52,14 @@ async function dashboard(req, res) {
   }));
 
   // TODO: Load from database when ready
-  const webringConfig = { ...DEFAULT_CONFIG };
+  const webringHtml = DEFAULT_HTML;
 
   res.render('admin/dashboard', {
     title: 'Admin - Dawn of the Devs',
     sites: sitesDisplay,
     counts,
     currentFilter: filter,
-    webringConfig,
+    webringHtml,
   });
 }
 
@@ -78,34 +89,31 @@ async function updateStatus(req, res) {
  * POST /admin/config - Update webring configuration.
  */
 async function updateConfig(req, res) {
-  const {
-    homeText, homeLabel, homeTitle,
-    previousLabel, previousTitle,
-    nextLabel, nextTitle,
-    randomLabel, randomTitle
-  } = req.body;
+  const { webringHtml } = req.body;
 
-  // Validate required fields
-  if (!homeText || !homeLabel || !homeTitle) {
-    req.session.flash = { type: 'error', message: 'Home link fields are required.' };
+  // Validate HTML input
+  if (!webringHtml || webringHtml.trim().length === 0) {
+    req.session.flash = { type: 'error', message: 'Webring HTML code is required.' };
+    return res.redirect('/admin');
+  }
+
+  // Sanitize HTML input for security
+  const sanitizedHtml = sanitizeWebringHtml(webringHtml);
+
+  if (!sanitizedHtml || sanitizedHtml.trim().length === 0) {
+    req.session.flash = { type: 'error', message: 'Invalid HTML code. Only &lt;a&gt; tags with href, aria-label, and title attributes are allowed.' };
     return res.redirect('/admin');
   }
 
   // TODO: Save to database when ready
   // For now, just log the configuration changes
-  const config = {
-    homeText, homeLabel, homeTitle,
-    previousLabel, previousTitle,
-    nextLabel, nextTitle,
-    randomLabel, randomTitle
-  };
-
-  logger.info('Admin config change', {
+  logger.info('Admin webring HTML change', {
     admin: req.session.user.url,
-    config
+    originalLength: webringHtml.length,
+    sanitizedLength: sanitizedHtml.length
   });
 
-  req.session.flash = { type: 'success', message: 'Configuration saved successfully!' };
+  req.session.flash = { type: 'success', message: 'Webring HTML code saved successfully!' };
   return res.redirect('/admin');
 }
 
