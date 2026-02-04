@@ -21,7 +21,7 @@ async function loginStart(req, res) {
       endpoints = await auth.discoverEndpoints(url);
     } catch (err) {
       logger.warn('Endpoint discovery failed', { url, error: err.message });
-      flashError(req, 'Could not reach your site. Please check the URL and try again.', err);
+      flashError(req, 'Could not discover IndieAuth endpoints for your site. Make sure you have proper IndieAuth/Rel-me links on your homepage, or the service may be temporarily unavailable.', err);
       return res.redirect('/');
     }
 
