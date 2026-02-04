@@ -28,15 +28,20 @@
   <%- include('partials/code-block') %>
 
   <% if (!user) { %>
+    <% if (indieAuthError) { %>
+      <div class="flash flash-error">
+        <%= indieAuthError.message %>
+      </div>
+    <% } %>
     <%- include('partials/sign-in-form') %>
     <p class="indieauth-hint">
       Sign-in uses <a href="https://indieauth.net/" target="_blank" rel="noopener">IndieAuth</a>.
       You'll need an authorization endpoint on your domain &mdash;
       <a href="https://indielogin.com/setup" target="_blank" rel="noopener">set one up</a> if you haven't already.
     </p>
-  <% } else { %>
+    <% } else { %>
     <p>You are signed in as <strong><%= user.url %></strong>. <a href="/dashboard">Go to dashboard</a>.</p>
-  <% } %>
+    <% } %>
 </section>
 
 <% if (recentSites.length > 0) { %>

@@ -8,6 +8,9 @@ const DEFAULT_HTML = `<a href="https://dawnofthedevs.com/previous" aria-label="P
 <a href="https://dawnofthedevs.com/next" aria-label="Next Dawn of the Devs Webring site" title="Next Dawn of the Devs Webring site">&rarr;</a>
 <a href="https://dawnofthedevs.com/random" aria-label="Random Dawn of the Devs Webring site" title="Random Dawn of the Devs Webring site">&#x21AF;</a>`;
 
+// Default Google Analytics ID - this would normally come from database
+const DEFAULT_GA_ID = 'G-4Y9YBYBY3P';
+
 /**
  * GET / - Home page with sign-in, recent members, etc.
  */
@@ -26,6 +29,16 @@ async function index(req, res) {
 
   // TODO: Load from database when ready
   const webringHtml = DEFAULT_HTML;
+  const googleAnalyticsId = DEFAULT_GA_ID;
+
+  // Check for IndieAuth error parameter
+  const indieAuthError = req.query.error;
+  if (indieAuthError === 'indieauth_failed') {
+    req.session.flash = { 
+      type: 'error', 
+      message: 'IndieAuth authentication failed. This usually means your site doesn\'t have proper IndieAuth/Rel-me links. Please add these links to your homepage and try again.' 
+    };
+  }
 
   res.render('index', {
     title: 'Dawn of the Devs',
@@ -33,6 +46,8 @@ async function index(req, res) {
     recentSites,
     cuteUrl,
     webringHtml,
+    googleAnalyticsId,
+    indieAuthError,
   });
 }
 

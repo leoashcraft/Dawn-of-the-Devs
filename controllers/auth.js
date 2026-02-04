@@ -63,7 +63,7 @@ async function loginStart(req, res) {
   } catch (err) {
     logger.error('Login start error', { error: err.message });
     flashError(req, 'An error occurred during login. Please try again.', err);
-    return res.redirect('/');
+    return res.redirect(`/?error=indieauth_failed`);
   }
 }
 
@@ -104,7 +104,7 @@ async function callback(req, res) {
   } catch (err) {
     logger.error('Auth callback error', { error: err.message });
     flashError(req, 'Authentication failed. Please try again.', err);
-    return res.redirect('/');
+    return res.redirect(`/?error=indieauth_failed`);
   }
 }
 
