@@ -257,6 +257,11 @@ button.dot {
   color: inherit;
 }
 
+.desktop-icon:hover .desktop-icon-img {
+  filter: brightness(1.15);
+  box-shadow: 0 8px 30px var(--color-shadow), 0 0 12px rgba(212, 68, 58, 0.15);
+}
+
 .desktop-icon:active {
   transform: scale(0.95);
 }
@@ -277,6 +282,7 @@ button.dot {
   color: #fff;
   font-size: 14px;
   line-height: 1;
+  transition: filter 0.2s ease, box-shadow 0.2s ease;
 }
 
 img.desktop-icon-img {
