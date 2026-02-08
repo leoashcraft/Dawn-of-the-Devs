@@ -952,6 +952,68 @@ h2 {
   font-size: 1.15rem;
 }
 
+/* Open source banner */
+
+.open-source-banner {
+  margin-bottom: 2rem;
+}
+
+.open-source-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: var(--radius);
+  background: rgba(74, 222, 128, 0.06);
+  color: var(--color-text);
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.open-source-link:hover {
+  border-color: rgba(74, 222, 128, 0.45);
+  background: rgba(74, 222, 128, 0.1);
+  text-decoration: none;
+  color: var(--color-text);
+}
+
+.github-logo {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  color: var(--color-success);
+}
+
+.open-source-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.open-source-text strong {
+  font-size: 0.95rem;
+  color: var(--color-success);
+}
+
+.open-source-text span {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.open-source-arrow {
+  font-size: 1.25rem;
+  color: var(--color-success);
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.open-source-link:hover .open-source-arrow {
+  transform: translateX(3px);
+}
+
 /* Sections */
 
 section {
@@ -1387,6 +1449,16 @@ section {
 .html-input:focus {
   outline: none;
   border-color: var(--color-primary);
+}
+
+/* Google Analytics Section */
+
+.google-analytics {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .stat-pills {
